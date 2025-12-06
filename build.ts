@@ -16,7 +16,10 @@ async function main() {
         bundle: true,
         minify: true,
         sourcemap: false,
-        target: ['es2020']
+        target: ['es2020'],
+        loader: {
+            '.html': 'text'
+        }
     }).catch(() => process.exit(1));
 
     // main.css
