@@ -1,3 +1,48 @@
-body {
-    margin: 0;
+.bpx-player-ctrl-rotate:hover {
+    transform: none !important;
+}
+
+.bpx-player-ctrl-rotate:hover .bcmnp-rotate-box {
+    display: flex;
+}
+
+.bcmnp-rotate-box {
+    box-sizing: border-box;
+    position: absolute;
+    bottom: 41px;
+    right: -58px;
+    width: fit-content;
+    height: fit-content;
+    flex-direction: column;
+    font-size: 12px;
+    padding: 10px 20px;
+    text-align: left;
+    color: #fff;
+    display: none;
+}
+
+.bcmnp-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.bcmnp-cols {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+}
+
+.bcmnp-auto-col {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.bcmnp-rotate-item {
+    background-color: rgba(255, 255, 255, 0.3);
+    border: none;
+    border-radius: 2px;
+    width: 40px;
+    height: 22px;
 }
