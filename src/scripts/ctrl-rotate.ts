@@ -39,11 +39,18 @@ class RotateController {
 
     // 显示面板
     private showPanel() {
+        if (this.panel.style.display === 'flex') {
+            return;
+        }
         this.panel.style.display = 'flex';
+        this.updatePanelPosition();
     }
 
     // 隐藏面板
     private hidePanel() {
+        if (this.panel.style.display === 'none') {
+            return;
+        }
         this.panel.style.display = 'none';
     }
 
@@ -73,6 +80,20 @@ class RotateController {
         this.useTeimer(() => {
             this.hidePanel();
         });
+    }
+
+    // 更新面板位置
+    private updatePanelPosition() {
+        const toggleRect = this.toggle.getBoundingClientRect();
+        const panelRect = this.panel.getBoundingClientRect();
+
+        const isScreenFull = document.fullscreenElement != null;
+        if (isScreenFull) {
+            this.panel.style.bottom = `74px`;
+        } else {
+            this.panel.style.bottom = `41px`;
+        }
+        this.panel.style.right = `${(toggleRect.width - panelRect.width) / 2}px`;
     }
 }
 
