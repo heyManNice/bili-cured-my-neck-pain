@@ -1,18 +1,22 @@
 /// <reference path="./global.d.ts" />
 
 import rotateBtnHtml from './htmls/bpx-player-ctrl-rotate.html';
+import rotateBtnScript from './scripts/bpx-player-ctrl-rotate.ts';
 import {
-    WaitUntilElementReady,
-    InsertHtmlBeforeElement
+    waitUntilElementReady,
+    insertHtmlBeforeElement,
+    log
 } from './utils.ts';
 
+
 async function main() {
-    const pipBtn = await WaitUntilElementReady('.bpx-player-ctrl-btn.bpx-player-ctrl-pip');
+    const pipBtn = await waitUntilElementReady('.bpx-player-ctrl-btn.bpx-player-ctrl-pip');
 
     const beginTime = Date.now();
-    InsertHtmlBeforeElement(pipBtn, rotateBtnHtml);
+    insertHtmlBeforeElement(pipBtn, rotateBtnHtml);
+    rotateBtnScript.onLoad();
 
-    console.log(`[B站治好了我的颈椎病] 已加载，耗时 ${Date.now() - beginTime} ms`);
+    log(`已加载，耗时 ${Date.now() - beginTime} ms`);
 }
 
 main();

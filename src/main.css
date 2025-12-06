@@ -2,10 +2,6 @@
     transform: none !important;
 }
 
-.bpx-player-ctrl-rotate:hover .bcmnp-rotate-box {
-    display: flex;
-}
-
 .bcmnp-rotate-box {
     box-sizing: border-box;
     position: absolute;
