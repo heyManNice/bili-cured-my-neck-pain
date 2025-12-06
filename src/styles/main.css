@@ -9,6 +9,7 @@
     text-align: left;
     color: #fff;
     display: none;
+    user-select: none;
 }
 
 
