@@ -1,13 +1,11 @@
 .bcmnp-rotate-box {
     box-sizing: border-box;
     position: absolute;
-    bottom: 41px;
-    right: -58px;
     width: fit-content;
     height: fit-content;
     flex-direction: column;
     font-size: 12px;
-    padding: 10px 20px;
+    padding: 10px 20px 12px 20px;
     text-align: left;
     color: #fff;
     display: none;
@@ -46,7 +44,14 @@
     transition: background-color 0.3s ease;
 }
 
-.bcmnp-rotate-item:hover {
+.bcmnp-rotate-item.checked {
+    background-color: var(--brand_blue, #00AEEC);
+}
+
+.bcmnp-rotate-item:not(.checked):hover {
     background-color: rgba(255, 255, 255, 0.4);
+}
+
+.bcmnp-rotate-item:hover {
     cursor: pointer;
 }
