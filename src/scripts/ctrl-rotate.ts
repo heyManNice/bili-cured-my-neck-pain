@@ -168,13 +168,32 @@ class RotateController {
             scale += 0.01;
         }
 
-        const oldTransform = video.style.transform || 'rotate(0deg) scale(1)';
-        const newTransform = `rotate(${angle}deg) scale(${scale})`;
-        video.style.transform = newTransform;
+        const oldRotate = video.style.rotate || '0deg';
+        const oldScale = video.style.scale || '1';
+
+        const newRotate = `${angle}deg`;
+        const newScale = `${scale}`;
+
+        video.style.rotate = newRotate;
+        video.style.scale = newScale;
+
+        // 优化动画效果的老旋转角度
+        let optimizedOldRotate = oldRotate;
+        if (oldRotate === '0deg' && newRotate === '270deg') {
+            optimizedOldRotate = '360deg';
+        } else if (oldRotate === '270deg' && newRotate === '0deg') {
+            optimizedOldRotate = '-90deg';
+        }
 
         video.animate([
-            { transform: oldTransform },
-            { transform: newTransform }
+            {
+                rotate: optimizedOldRotate,
+                scale: oldScale
+            },
+            {
+                rotate: newRotate,
+                scale: newScale
+            }
         ], {
             duration: 300,
             easing: 'ease-in-out',
