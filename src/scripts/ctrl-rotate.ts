@@ -9,6 +9,9 @@ class RotateController {
     // 显示和隐藏面板共用的定时器
     private timer: number | null = null;
 
+    // 触发器是否正在播放动画
+    private isToggleAnimating = false;
+
     constructor() {
         const toggle = document.querySelector<HTMLElement>('.bpx-player-ctrl-rotate .bpx-player-ctrl-btn-icon');
         const panel = document.querySelector<HTMLElement>('.bpx-player-ctrl-rotate .bcmnp-rotate-box');
@@ -56,6 +59,22 @@ class RotateController {
 
     // 鼠标移入触发器
     private toggleOnMouseEnter(event: Event) {
+        // 触发动画
+        if (!this.isToggleAnimating) {
+            this.isToggleAnimating = true;
+            this.toggle.animate([
+                { transform: 'scale(1)' },
+                { transform: 'scale(0.8)' },
+                { transform: 'scale(0.8)' },
+                { transform: 'scale(1)' }
+            ], {
+                duration: 500,
+                easing: 'ease-in-out',
+            });
+            setTimeout(() => {
+                this.isToggleAnimating = false;
+            }, 1000);
+        }
         this.useTeimer(() => {
             this.showPanel();
         });
