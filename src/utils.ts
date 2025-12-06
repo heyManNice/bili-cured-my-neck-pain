@@ -30,3 +30,12 @@ export function insertHtmlBeforeElement(element: Element, html: string) {
 export function log(message: string) {
     console.log(`[B站治好了我的颈椎病] ${message}`);
 }
+
+// 风格化打印版本号
+export function printVersion(version: string, cost: string) {
+    console.log(
+        `%c 🤪 B站治好了我的颈椎病 v${version} %c Cost ${cost}ms`,
+        'background:#4A90E2;color:white;padding:2px 6px;border-radius:3px 0 0 3px;font-weight:bold;',
+        'background:#50E3C2;color:#003333;padding:2px 6px;border-radius:0 3px 3px 0;font-weight:bold;',
+    );
+}
