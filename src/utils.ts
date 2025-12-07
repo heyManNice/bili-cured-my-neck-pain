@@ -44,7 +44,7 @@ export function printVersion(version: string, cost: string) {
 // 组合元素的动画,keyframes示例
 // [
 //     {
-//         "@current": {
+//         "@all": {
 //             rotate: '0deg',
 //         },
 //         "#child": {
