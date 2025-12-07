@@ -75,8 +75,8 @@ class RotateController {
         if (!this.isToggleAnimating) {
             this.isToggleAnimating = true;
             animateGroup(this.toggle, rotateToggleKeyframes, {
-                duration: 500,
-                easing: 'ease-in-out',
+                duration: 800,
+                easing: 'ease',
             });
             setTimeout(() => {
                 this.isToggleAnimating = false;
