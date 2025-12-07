@@ -42,12 +42,12 @@ class Version {
 const version = new Version();
 
 class Git {
-    public async commitAndPush(newVersion: { major: number; minor: number; patch: number }) {
+    public async commitAndPush(newVersion: { major: number; minor: number; patch: number }, releaseType: string) {
         const versionStr = `${newVersion.major}.${newVersion.minor}.${newVersion.patch}`;
         await system('git checkout main');
         await system('git pull origin main');
         await system('git add .');
-        await system(`git commit -m "release: v${versionStr}"`);
+        await system(`git commit -m "release (${releaseType}) : v${versionStr}"`);
         await system('git push origin main');
         log(`Changes pushed to main branch with version v${versionStr}`);
     }
@@ -98,22 +98,34 @@ const build = new Builder();
 
 async function main() {
     const releaseType = process.argv[2];
-    if (!['break', 'feature', 'fix'].includes(releaseType)) {
-        error(`Invalid release type. Use one of: break, feature, fix.`);
+    if (!['break', 'feature', 'patch'].includes(releaseType)) {
+        error(`Invalid release type. Use one of: break, feature, patch.`);
     }
     log(`Starting release process for type: ${releaseType}`);
 
-    const { major, minor, patch } = version.getVersion();
+    let { major, minor, patch } = version.getVersion();
+
+    if (releaseType === 'break') {
+        major += 1;
+        minor = 0;
+        patch = 0;
+    } else if (releaseType === 'feature') {
+        minor += 1;
+        patch = 0;
+    } else {
+        patch += 1;
+    }
+
     const newVersion = {
-        major: releaseType === 'break' ? major + 1 : major,
-        minor: releaseType === 'feature' ? minor + 1 : minor,
-        patch: releaseType === 'fix' ? patch + 1 : patch
+        major,
+        minor,
+        patch
     };
 
     version.setVersion(newVersion);
 
     await build.runBuild();
-    await git.commitAndPush(newVersion);
+    await git.commitAndPush(newVersion, releaseType);
     await git.tagAndRelease(newVersion, releaseType);
 }
 
