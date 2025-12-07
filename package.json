@@ -1,6 +1,7 @@
 {
     "scripts": {
-        "build": "bun build.ts"
+        "build": "bun build.ts",
+        "release": "bun tools/release.ts"
     },
     "devDependencies": {
         "esbuild": "^0.27.1",
