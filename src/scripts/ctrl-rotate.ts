@@ -113,8 +113,9 @@ class RotateController {
         const toggleRect = this.toggle.getBoundingClientRect();
         const panelRect = this.panel.getBoundingClientRect();
 
-        const isScreenFull = document.fullscreenElement != null;
-        if (isScreenFull) {
+        const screenType = document.querySelector<HTMLElement>('.bpx-player-container')?.dataset.screen ?? 'normal';
+
+        if (screenType === 'full' || screenType === 'web') {
             this.panel.style.bottom = `74px`;
         } else {
             this.panel.style.bottom = `41px`;
