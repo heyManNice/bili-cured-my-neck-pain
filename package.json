@@ -1,7 +1,8 @@
 {
     "scripts": {
         "build": "bun build.ts",
-        "release": "bun tools/release.ts"
+        "release": "bun tools/release.ts",
+        "docs": "serve docs -l 8080"
     },
     "devDependencies": {
         "@types/adm-zip": "^0.5.7",
