@@ -87,16 +87,38 @@
                 </div>
 
                 <!-- 下载按钮 -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-center lg:justify-start font-bold lg:pr-20">
+                    <!-- edge浏览器 -->
                     <a href="https://microsoftedge.microsoft.com/addons/detail/jibkbiogfabcelhhmjgjfcbnoebckdcd"
                         class="btn-hover bg-[#0078D7] text-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
                         <i class="fa fa-edge text-xl"></i>
                         <span>Edge 插件商店</span>
                     </a>
+                    <!-- 谷歌浏览器 -->
                     <a href="javascript:alert('敬请期待！')"
                         class="btn-hover bg-white text-black px-8 py-4 rounded-lg flex items-center justify-center gap-2">
                         <i class="fa fa-chrome text-xl"></i>
-                        <span>Chrome 商店</span>
+                        <span>Chrome 插件商店</span>
+                    </a>
+                    <!-- Firefox浏览器 -->
+                    <a href="javascript:alert('敬请期待！')"
+                        class="btn-hover bg-[#FF7139] text-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
+                        <i class="fa fa-firefox text-xl"></i>
+                        <span>Firefox 插件商店</span>
+                    </a>
+                    <!-- Tampermonkey -->
+                    <a href="javascript:alert('敬请期待！')"
+                        class="btn-hover bg-[#FFCD00] text-black px-8 py-4 rounded-lg flex items-center justify-center gap-2">
+                        <svg class="icon w-5 h-5 min-w-5 min-h-5" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                            <path
+                                d="M780.288 0H243.712C109.056 0 0 109.056 0 243.712v536.576C0 914.944 109.056 1024 243.712 1024h536.576C914.944 1024 1024 914.944 1024 780.288V243.712C1024 109.056 914.944 0 780.288 0z m-508.16 960C157.184 960 64 866.816 64 752.128 64 637.184 157.184 544 272.128 544s208.128 93.184 208.128 208.128C480 866.816 386.816 960 272.128 960z m480 0C637.184 960 544 866.816 544 751.872s93.184-208.128 208.128-208.128 208.128 93.184 208.128 208.128C960 866.816 866.816 960 752.128 960z">
+                            </path>
+                            <path
+                                d="M780.288 0H243.712C109.056 0 0 109.056 0 243.712v536.576C0 914.944 109.056 1024 243.712 1024h536.576C914.944 1024 1024 914.944 1024 780.288V243.712C1024 109.056 914.944 0 780.288 0z m-508.16 960C157.184 960 64 866.816 64 752.128 64 637.184 157.184 544 272.128 544s208.128 93.184 208.128 208.128C480 866.816 386.816 960 272.128 960z m480 0C637.184 960 544 866.816 544 751.872s93.184-208.128 208.128-208.128 208.128 93.184 208.128 208.128C960 866.816 866.816 960 752.128 960z">
+                            </path>
+                        </svg>
+                        <span>安装到 Tampermonkey</span>
                     </a>
                 </div>
                 <div class="flex items-center gap-2 text-white/80 justify-center lg:justify-start text-sm">
