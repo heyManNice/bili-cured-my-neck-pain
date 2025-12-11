@@ -13,6 +13,9 @@
 
 <br><br>
 
+## 安装
+点击 [这里](https://bcmnp.ydcdgo.com) 选择你的安装方式。
+
 ## 反馈问题
 点击 [这里](https://github.com/heyManNice/bili-cured-my-neck-pain/issues/new) 反馈问题。
 
