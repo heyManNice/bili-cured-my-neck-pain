@@ -19,5 +19,15 @@
                 "https://www.bilibili.com/video/*"
             ]
         }
-    ]
+    ],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "bcmnp-addon@fake.local",
+            "data_collection_permissions": {
+                "required": [
+                    "none"
+                ]
+            }
+        }
+    }
 }
