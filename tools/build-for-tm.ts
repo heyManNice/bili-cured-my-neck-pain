@@ -16,6 +16,7 @@ export function build() {
 // @description  给B站PC网页版添加视频旋转功能，喜欢的话点点小星星哟~
 // @author       https://github.com/heyManNice
 // @match        https://www.bilibili.com/video/*
+// @match        https://www.bilibili.com/list/watchlater/*
 // @icon         https://heymannice.github.io/bili-cured-my-neck-pain/assets/bcmnp-logo.png
 // @grant        GM_addStyle
 // ==/UserScript==

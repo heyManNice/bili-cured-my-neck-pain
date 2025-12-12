@@ -16,7 +16,8 @@
                 "main.css"
             ],
             "matches": [
-                "https://www.bilibili.com/video/*"
+                "https://www.bilibili.com/video/*",
+                "https://www.bilibili.com/list/watchlater/*",
             ]
         }
     ],
