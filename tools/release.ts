@@ -76,7 +76,10 @@ class Git {
         // 用 gh 发布 release 并附带 zip 包
         const zipPath = path.resolve(__dirname, `../release/bcmnp_${versionStr}.zip`);
 
-        await system(`gh release create ${versionStr} -F ${tmpFile} ${zipPath}`);
+        // 油猴版本文件
+        const tmPath = path.resolve(__dirname, `../release/bcmnp_${versionStr}.tampermonkey.user.js`);
+
+        await system(`gh release create ${versionStr} -F ${tmpFile} ${zipPath} ${tmPath}`);
 
         log(`Release ${versionStr} created with notes from CHANGELOG.md`);
     }
@@ -86,6 +89,7 @@ const git = new Git();
 class Builder {
     public async runBuild() {
         log(await system('npm run build'));
+        log(await system('npm run build:tm'));
         const zip = new AdmZip();
         zip.addLocalFolder(path.resolve(__dirname, '../dist'));
         const v = version.getVersion();

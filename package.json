@@ -1,6 +1,7 @@
 {
     "scripts": {
         "build": "bun build.ts",
+        "build:tm": "bun tools/build-for-tm.ts",
         "release": "bun tools/release.ts",
         "docs": "serve docs -l 8080"
     },

@@ -11,6 +11,7 @@ class RotateController {
     private toggle: HTMLElement;
     private panel: HTMLElement;
     private rotateItems: HTMLElement;
+    private scaleItems: HTMLElement;
 
     // 显示和隐藏面板共用的定时器
     private timer: number | null = null;
@@ -22,8 +23,9 @@ class RotateController {
         const toggle = document.querySelector<HTMLElement>('.bpx-player-ctrl-rotate .bpx-player-ctrl-btn-icon');
         const panel = document.querySelector<HTMLElement>('.bpx-player-ctrl-rotate .bcmnp-rotate-box');
         const rotateItems = document.querySelector<HTMLElement>('.bcmnp-rotate-items');
+        const scaleItems = document.querySelector<HTMLElement>('.bcmnp-scale-items');
 
-        if (!toggle || !panel || !rotateItems) {
+        if (!toggle || !panel || !rotateItems || !scaleItems) {
             throw new Error('旋转按钮或面板未找到');
         }
 
@@ -31,6 +33,7 @@ class RotateController {
         this.toggle = toggle;
         this.panel = panel;
         this.rotateItems = rotateItems;
+        this.scaleItems = scaleItems;
 
         // 监听事件
         this.toggle.addEventListener('mouseenter', this.toggleOnMouseEnter.bind(this));
@@ -40,6 +43,7 @@ class RotateController {
         this.panel.addEventListener('mouseleave', this.panelOnMouseLeave.bind(this));
 
         this.rotateItems.addEventListener('click', this.rotateItemOnClick.bind(this));
+        this.scaleItems.addEventListener('click', this.scaleItemOnClick.bind(this));
     }
 
     // 共用定时器
@@ -123,20 +127,12 @@ class RotateController {
         this.panel.style.right = `${(toggleRect.width - panelRect.width) / 2}px`;
     }
 
-    // 鼠标点击屏幕旋转选项的值
+    // 鼠标点击旋转选项
     private rotateItemOnClick(event: Event) {
         const target = event.target as HTMLElement;
         if (!target.classList.contains('bcmnp-btn-item')) {
             return;
         }
-
-        const angleStr = target.dataset.angle;
-        if (!angleStr) {
-            log('未找到旋转角度数据');
-            return;
-        }
-        const angle = parseInt(angleStr, 10);
-        this.rotateVideo(angle);
 
         // 更新选中状态
         const checked = this.rotateItems.querySelector<HTMLElement>('.bcmnp-rotate-items .bcmnp-btn-item.checked');
@@ -144,15 +140,47 @@ class RotateController {
             checked.classList.remove('checked');
         }
         target.classList.add('checked');
+
+        this.rotateAndScaleVideo();
+    }
+
+    // 鼠标点击缩放选项
+    private scaleItemOnClick(event: Event) {
+        const target = event.target as HTMLElement;
+        if (!target.classList.contains('bcmnp-btn-item')) {
+            return;
+        }
+        // 更新选中状态
+        const checked = this.scaleItems.querySelector<HTMLElement>('.bcmnp-scale-items .bcmnp-btn-item.checked');
+        if (checked) {
+            checked.classList.remove('checked');
+        }
+        target.classList.add('checked');
+
+        this.rotateAndScaleVideo();
     }
 
     // 旋转视频
-    private rotateVideo(angle: number) {
+    private rotateAndScaleVideo() {
         const video = document.querySelector<HTMLVideoElement>('.bpx-player-video-wrap');
         if (!video) {
             log('视频元素未找到，无法旋转');
             return;
         }
+
+        const angleStr = document.querySelector<HTMLElement>('.bcmnp-rotate-items .bcmnp-btn-item.checked')?.dataset.angle;
+        if (!angleStr) {
+            log('未找到当前旋转角度数据');
+            return;
+        }
+        const angle = parseInt(angleStr, 10);
+
+        const scaleStr = document.querySelector<HTMLElement>('.bcmnp-scale-items .bcmnp-btn-item.checked')?.dataset.scale;
+        if (!scaleStr) {
+            log('未找到当前缩放数据');
+            return;
+        }
+        const scale = parseFloat(scaleStr);
 
         // 计算最佳缩放参数
         const W = 16;
@@ -162,18 +190,18 @@ class RotateController {
         const scaleX = W / (W * Math.abs(Math.cos(rad)) + H * Math.abs(Math.sin(rad)));
         const scaleY = H / (W * Math.abs(Math.sin(rad)) + H * Math.abs(Math.cos(rad)));
 
-        let scale = Math.min(scaleX, scaleY);
+        let scaleNew = Math.min(scaleX, scaleY) * scale;
 
         // 可以修复全屏的时候旋转失效的问题，不知道为什么
         if (angle === 90 || angle === 270 || angle === 180) {
-            scale += 0.01;
+            scaleNew += 0.01;
         }
 
         const oldRotate = video.style.rotate || '0deg';
         const oldScale = video.style.scale || '1';
 
         const newRotate = `${angle}deg`;
-        const newScale = `${scale}`;
+        const newScale = `${scaleNew}`;
 
         video.style.rotate = newRotate;
         video.style.scale = newScale;
