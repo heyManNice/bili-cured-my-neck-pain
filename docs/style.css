@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+
+@theme {
+    /* theme colors */
+    --color-theme-pink: #FB7299;
+    --color-theme-blue: #00A1D6;
+    --color-theme-dark: #18191C;
+    --color-theme-light: #F4F5F7;
+    --color-theme-gray: #9499A0;
+    --color-theme-secondary: #23272A;
+
+    /* font family */
+    --font-sans: Inter, system-ui, sans-serif;
+}
+
+
+@layer utilities {
+    .content-auto {
+        content-visibility: auto;
+    }
+
+    .player-shadow {
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .btn-hover {
+        @apply transition-all duration-300 hover:scale-105 hover:shadow-lg;
+    }
+
+    .card-hover {
+        @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+    }
+}
+
+svg.icon {
+    --icon-size: 1.3rem;
+    width: var(--icon-size);
+    height: var(--icon-size);
+    min-width: var(--icon-size);
+    min-height: var(--icon-size);
+}

@@ -1,5 +1,5 @@
 // 生成 Tampermonkey 单 JS 文件
-import manifest from '../config/manifest.json' assert { type: 'json' };
+import manifest from '../config/manifest.json' with { type: 'json' };
 import * as fs from 'fs';
 import * as path from 'path';
 

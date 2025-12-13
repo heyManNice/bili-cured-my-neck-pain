@@ -5,58 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B站视频旋转插件 - 让观看体验更自由</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="//cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
-    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-
-    <!-- Tailwind 配置 -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        bilibili: {
-                            pink: '#FB7299',
-                            blue: '#00A1D6',
-                            dark: '#18191C',
-                            light: '#F4F5F7',
-                            gray: '#9499A0'
-                        },
-                        plugin: {
-                            primary: '#7289DA',
-                            secondary: '#23272A'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                    animation: {
-                        'spin-slow': 'spin 10s linear infinite',
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style type="text/tailwindcss">
-        @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .player-shadow {
-                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            }
-            .btn-hover {
-                @apply transition-all duration-300 hover:scale-105 hover:shadow-lg;
-            }
-            .card-hover {
-                @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
-            }
-        }
-    </style>
+    <script src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js" defer></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="bg-gradient-to-br from-bilibili-dark to-plugin-secondary min-h-screen text-white font-sans">
+<body class="bg-linear-to-br from-theme-dark to-theme-secondary min-h-screen text-white font-sans">
     <header class="h-24">
 
     </header>
@@ -67,20 +20,27 @@
             <div class="space-y-8">
                 <!-- Logo -->
                 <div class="flex justify-center lg:justify-start">
-                    <img class="w-[10rem] h-[10rem]" src="./assets/bcmnp-logo.png" alt="bcmnp-logo">
+                    <img class="w-40 h-40" src="./assets/bcmnp-logo.png" alt="bcmnp-logo">
                 </div>
 
                 <!-- 标题和描述 -->
                 <div class="text-center lg:text-left space-y-4">
-                    <h1 class="text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
+                    <h1 class="slogan text-[clamp(2rem,5vw,3rem)] font-bold leading-tight">
                         B站治好了我的颈椎病
                     </h1>
-                    <p class="text-bilibili-gray text-lg max-w-md mx-auto lg:mx-0">
-                        给B站PC网页版添加视频旋转功能，喜欢的话点点小星星哟😘
+                    <p class="text-theme-gray text-lg max-w-md mx-auto lg:mx-0">
+                        给B站PC网页版添加视频旋转和缩放功能，喜欢的话点点小星星哟😘
                         <a href="https://github.com/heyManNice/bili-cured-my-neck-pain"
-                            class="text-bilibili-gray hover:text-white transition-colors ml-1">
-                            <i class="fa fa-github"></i>
-                            <span class="ml-1">Github</span>
+                            class="text-theme-gray hover:text-white transition-colors fill-theme-gray hover:fill-white inline-flex items-center gap-1 align-top">
+
+                            <svg t="1765615479927" class="w-4 h-4" viewBox="0 0 1024 1024" version="1.1"
+                                xmlns="http://www.w3.org/2000/svg" p-id="4621" width="200" height="200">
+                                <path
+                                    d="M512 42.666667A464.64 464.64 0 0 0 42.666667 502.186667 460.373333 460.373333 0 0 0 363.52 938.666667c23.466667 4.266667 32-9.813333 32-22.186667v-78.08c-130.56 27.733333-158.293333-61.44-158.293333-61.44a122.026667 122.026667 0 0 0-52.053334-67.413333c-42.666667-28.16 3.413333-27.733333 3.413334-27.733334a98.56 98.56 0 0 1 71.68 47.36 101.12 101.12 0 0 0 136.533333 37.973334 99.413333 99.413333 0 0 1 29.866667-61.44c-104.106667-11.52-213.333333-50.773333-213.333334-226.986667a177.066667 177.066667 0 0 1 47.36-124.16 161.28 161.28 0 0 1 4.693334-121.173333s39.68-12.373333 128 46.933333a455.68 455.68 0 0 1 234.666666 0c89.6-59.306667 128-46.933333 128-46.933333a161.28 161.28 0 0 1 4.693334 121.173333A177.066667 177.066667 0 0 1 810.666667 477.866667c0 176.64-110.08 215.466667-213.333334 226.986666a106.666667 106.666667 0 0 1 32 85.333334v125.866666c0 14.933333 8.533333 26.88 32 22.186667A460.8 460.8 0 0 0 981.333333 502.186667 464.64 464.64 0 0 0 512 42.666667"
+                                    p-id="4622"></path>
+                            </svg>
+
+                            <span>Github</span>
                         </a>
                     </p>
                 </div>
@@ -89,27 +49,45 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-center lg:justify-start font-bold lg:pr-20">
                     <!-- edge浏览器 -->
                     <a href="https://microsoftedge.microsoft.com/addons/detail/jibkbiogfabcelhhmjgjfcbnoebckdcd"
-                        class="btn-hover bg-[#0078D7] text-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
-                        <i class="fa fa-edge text-xl"></i>
+                        class="btn-hover bg-[#0078D7] text-white fill-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
+                        <svg t="1765612808919" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="4710" width="200" height="200">
+                            <path
+                                d="M963.84 268.96C881.74 108.36 704.52 16 511.82 16 274.1 16 75.02 183.36 26.94 407.32c52-92.98 172.44-158.28 298.92-158.28 158.54 0 242.18 97.86 244.5 100.36 44 47.6 66 100.78 66 166.2 0 20.8-10.62 51.64-30.22 77.14-3.14 4-12.78 9.68-12.78 22 0 10.12 6.58 19.84 18.28 28 55.72 38.74 160.74 33.62 161.02 33.62A230.78 230.78 0 0 0 889.88 644a237.84 237.84 0 0 0 117.9-204.88c1-86.86-31-144.6-43.94-170.16zM425.54 951.34a309.76 309.76 0 0 1-93.28-90c-65.88-94.84-68.48-191.2-40.2-272A311 311 0 0 1 406 431.5c118-90.4 189.68-11.3 198.12-2a160 160 0 0 0-9.78-20.28c-18.48-31.86-48-72.82-113.12-107.02-67.44-35.38-141.18-37.18-155.28-37.18-77.42 0-155.8 26-215.06 71.38C71.36 366.6 25.54 417.44 17.2 486c-2.16 24.62-5.5 125.6 46 236.54a496 496 0 0 0 496.6 283.22c-76.24-13.24-131.7-53.28-134.26-54.42z m501.44-196.66a15.52 15.52 0 0 0-15.84-0.46 363.32 363.32 0 0 1-40.82 18.24 395.08 395.08 0 0 1-139.1 25.04c-183.34 0-343.04-126.12-343.04-288a122.24 122.24 0 0 1 13.04-53.5 337.44 337.44 0 0 0-77.52 100c-29.84 58.74-66 176.26 26.66 303.32 13.02 17.82 46 60 112 95.34 47.14 25.3 98 39.22 143.4 39.22 70.28 0 230.86-66.88 326-217.74a15.5 15.5 0 0 0-4.78-21.46z"
+                                p-id="4711"></path>
+                        </svg>
                         <span>Edge 插件商店</span>
                     </a>
                     <!-- 谷歌浏览器 -->
                     <a href="javascript:alert('敬请期待！')"
                         class="btn-hover bg-white text-black px-8 py-4 rounded-lg flex items-center justify-center gap-2">
-                        <i class="fa fa-chrome text-xl"></i>
+                        <svg style="scale: 1.2;" t="1765612857568" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="5691" width="200" height="200">
+                            <path
+                                d="M371.8 512c0 77.5 62.7 140.2 140.2 140.2S652.2 589.5 652.2 512 589.5 371.8 512 371.8 371.8 434.4 371.8 512z"
+                                p-id="5692"></path>
+                            <path
+                                d="M900 362.4l-234.3 12.1c63.6 74.3 64.6 181.5 11.1 263.7l-188 289.2c78 4.2 158.4-12.9 231.2-55.2 180-104 253-322.1 180-509.8zM320.3 591.9L163.8 284.1C121 349.5 96 428 96 512c0 208 152.3 380.3 351.4 410.8l106.9-209.4c-96.6 18.2-189.9-34.8-234-121.5zM538.8 306.4l344.4 18.1C848 254.7 792.6 194 719.8 151.7 653.9 113.6 581.5 95.5 510.5 96c-122.5 0.5-242.2 55.2-322.1 154.5l128.2 196.9c32-91.9 124.8-146.7 222.2-141z"
+                                p-id="5693"></path>
+                        </svg>
                         <span>Chrome 插件商店</span>
                     </a>
                     <!-- Firefox浏览器 -->
                     <a href="javascript:alert('敬请期待！')"
-                        class="btn-hover bg-[#FF7139] text-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
-                        <i class="fa fa-firefox text-xl"></i>
+                        class="btn-hover bg-[#FF7139] text-white fill-white px-8 py-4 rounded-lg flex items-center justify-center gap-2">
+                        <svg t="1765612902090" class="icon" viewBox="0 0 1057 1024" version="1.1"
+                            xmlns="http://www.w3.org/2000/svg" p-id="6664" width="200" height="200">
+                            <path
+                                d="M532.065417 1024h1.174312q-167.926606 0-298.27523-88.66055T41.203032 701.06422q-34.055046-77.504587-39.926606-177.908257t15.266055-196.110091Q37.680096 231.33945 82.303949 143.266055t105.688073-143.266055l-7.045871 165.577982q7.045872-8.220183 40.513761-9.394496t40.513762 9.394496q25.834862-48.146789 95.706422-81.614679T495.661747 49.321101q-31.706422 27.009174-70.458715 88.073394t-35.229358 96.293578q15.266055 4.697248 37.577981 7.633028t36.40367 4.110092l70.458716 4.697247q9.394495 2.348624 5.871559 26.422019T521.496609 321.761468q-2.348624 3.522936-9.394495 10.568807t-33.46789 21.137615Q452.212206 367.559633 419.331472 373.431193l9.394495 111.559633-82.201835-39.926606q-10.568807 25.834862-4.697247 48.146789t21.137614 38.752294q15.266055 16.440367 38.752294 24.66055t48.146789 4.697248q29.357798-5.87156 57.541284-21.137615l49.321101-25.834862q21.137615-11.743119 43.449542-10.568807 35.229358 2.348624 52.25688 19.376146T664.762665 561.321101l-2.348624 3.522936q-1.174312 2.348624-5.284404 7.633027t-10.568807 8.80734q-6.458716 3.522936-18.201835 5.871559t-27.009174 1.174312q-35.229358 55.192661-85.137615 79.266055T392.322298 684.623853q43.449541 36.40367 95.706422 49.321101t99.229357 3.522936q46.972477-9.394495 91.009175-31.119266t75.743119-51.669725q31.706422-29.944954 46.972477-60.477064 25.834862-54.018349 23.486239-113.908257t-22.311927-110.972477Q782.193857 318.238532 756.358995 295.926606q51.669725 22.311927 81.027523 46.385321t44.623853 66.348623q9.394495-99.816514-33.46789-201.981651T724.652573 38.752294q156.183486 45.798165 243.082569 164.990825T1056.982848 508.477064q1.174312 75.155963-24.073394 150.899083t-72.80734 140.330275q-47.559633 64.587156-111.559633 115.669725t-146.201835 79.853211Q620.138811 1024 532.065417 1024z"
+                                p-id="6665"></path>
+                        </svg>
                         <span>Firefox 插件商店</span>
                     </a>
                     <!-- Tampermonkey -->
-                    <a href="./tampermonkey/bcmnp_v0.2.0.tampermonkey.user.js"
+                    <a href="./tampermonkey/bcmnp_v{{VERSION}}.tampermonkey.user.js"
                         class="btn-hover bg-[#FFCD00] text-black px-8 py-4 rounded-lg flex items-center justify-center gap-2">
-                        <svg class="icon w-5 h-5 min-w-5 min-h-5" viewBox="0 0 1024 1024" version="1.1"
-                            xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+                        <svg class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"
+                            width="200" height="200">
                             <path
                                 d="M780.288 0H243.712C109.056 0 0 109.056 0 243.712v536.576C0 914.944 109.056 1024 243.712 1024h536.576C914.944 1024 1024 914.944 1024 780.288V243.712C1024 109.056 914.944 0 780.288 0z m-508.16 960C157.184 960 64 866.816 64 752.128 64 637.184 157.184 544 272.128 544s208.128 93.184 208.128 208.128C480 866.816 386.816 960 272.128 960z m480 0C637.184 960 544 866.816 544 751.872s93.184-208.128 208.128-208.128 208.128 93.184 208.128 208.128C960 866.816 866.816 960 752.128 960z">
                             </path>
@@ -122,8 +100,7 @@
                 </div>
                 <div class="flex items-center gap-2 text-white/80 justify-center lg:justify-start text-sm">
                     <a href="https://www.busuanzi.cc/count.php?search=bcmnp.ydcdgo.com" title="不蒜子统计" target="_blank">
-                        <img class="w-[85px] h-[25px] inline"
-                            src="https://www.busuanzi.cc/static/images/bsz-tongji.png">
+                        <img class="w-21.25 h-6.25 inline" src="https://www.busuanzi.cc/static/images/bsz-tongji.png">
                     </a>
                     <span>本站总访客数 <span id="busuanzi_site_uv">加载中...</span> 人</span>
                 </div>
@@ -134,10 +111,15 @@
                 <!-- B站风格播放器 -->
                 <div class="aspect-video bg-black rounded-xl overflow-hidden player-shadow relative">
                     <!-- 视频区域（旋转演示） -->
-                    <div class="w-full h-full flex items-center justify-center bg-bilibili-dark/80 absolute">
+                    <div class="w-full h-full flex items-center justify-center bg-theme-dark/80 absolute">
                         <div id="video-rotate-demo"
-                            class="w-full h-full bg-gradient-to-br from-bilibili-pink/30 to-bilibili-blue/30 rounded-lg flex items-center justify-center">
-                            <i class="fa fa-play-circle fa-2x"></i>
+                            class="w-full h-full bg-linear-to-br from-theme-pink/30 to-theme-blue/30 rounded-lg flex items-center justify-center">
+                            <svg t="1765613134877" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                                xmlns="http://www.w3.org/2000/svg" p-id="6052" width="200" height="200">
+                                <path
+                                    d="M512 42.666667C252.793333 42.666667 42.666667 252.793333 42.666667 512s210.126667 469.333333 469.333333 469.333333 469.333333-210.126667 469.333333-469.333333S771.206667 42.666667 512 42.666667z m196.546667 500.493333l-266.666667 176A37.333333 37.333333 0 0 1 384 688V336.033333a37.333333 37.333333 0 0 1 57.893333-31.16l266.666667 176a37.333333 37.333333 0 0 1 0 62.32z"
+                                    fill="#5C5C66" p-id="6053"></path>
+                            </svg>
                         </div>
                     </div>
                     <!-- 控制栏样式 -->
@@ -146,68 +128,15 @@
 
                 <!-- 装饰元素 -->
                 <div
-                    class="absolute -top-4 -right-4 w-20 h-20 bg-bilibili-pink/20 rounded-full blur-xl pointer-events-none">
+                    class="absolute -top-4 -right-4 w-20 h-20 bg-theme-pink/20 rounded-full blur-xl pointer-events-none">
                 </div>
                 <div
-                    class="absolute -bottom-6 -left-6 w-24 h-24 bg-bilibili-blue/20 rounded-full blur-xl pointer-events-none">
+                    class="absolute -bottom-6 -left-6 w-24 h-24 bg-theme-blue/20 rounded-full blur-xl pointer-events-none">
                 </div>
             </div>
         </div>
     </main>
 </body>
-
-<script>
-
-    // 模拟视频旋转效果
-    const video = document.getElementById('video-rotate-demo');
-
-    function rotateVideo(angle) {
-        const W = 16;
-        const H = 9;
-        const rad = angle * Math.PI / 180;
-
-        const scaleX = W / (W * Math.abs(Math.cos(rad)) + H * Math.abs(Math.sin(rad)));
-        const scaleY = H / (W * Math.abs(Math.sin(rad)) + H * Math.abs(Math.cos(rad)));
-
-        const scale = Math.min(scaleX, scaleY);
-
-        const oldRotate = video.style.rotate || '0deg';
-        const oldScale = video.style.scale || '1';
-
-        const newRotate = `${angle}deg`;
-        const newScale = `${scale}`;
-
-        video.style.rotate = newRotate;
-        video.style.scale = newScale;
-
-        // 优化动画效果的老旋转角度
-        let optimizedOldRotate = oldRotate;
-        if (oldRotate === '0deg' && newRotate === '270deg') {
-            optimizedOldRotate = '360deg';
-        } else if (oldRotate === '270deg' && newRotate === '0deg') {
-            optimizedOldRotate = '-90deg';
-        }
-
-        video.animate([
-            {
-                rotate: optimizedOldRotate,
-                scale: oldScale
-            },
-            {
-                rotate: newRotate,
-                scale: newScale
-            }
-        ], {
-            duration: 300,
-            easing: 'ease-in-out',
-        });
-    }
-
-    let globalAngle = 0;
-    setInterval(() => {
-        globalAngle = (globalAngle + 90) % 360;
-        rotateVideo(globalAngle);
-    }, 2000);
-</script>
+<script type="module" src="script.ts"></script>
 
 </html>
