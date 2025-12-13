@@ -22,6 +22,9 @@ export function build() {
 // ==/UserScript==
 GM_addStyle(\`${style}\`);
 ${script}`;
+    if (!fs.existsSync(path.resolve(__dirname, '../release'))) {
+        fs.mkdirSync(path.resolve(__dirname, '../release'));
+    }
     fs.writeFileSync(path.resolve(__dirname, `../release/bcmnp_v${version}.tampermonkey.user.js`), result, 'utf-8');
     console.log('build for tampermonkey complete.');
 }
