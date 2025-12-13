@@ -40,10 +40,15 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22
+      # Step: Setup Bun
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: stable
 
       # Step: Build docs site
       - name: Build docs site
-        run: npm install && npm run docs:build
+        run: npm install && npm run build && npm run docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
