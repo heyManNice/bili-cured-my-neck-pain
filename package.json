@@ -3,14 +3,19 @@
         "build": "bun build.ts",
         "build:tm": "bun tools/build-for-tm.ts",
         "release": "bun tools/release.ts",
-        "docs": "serve docs -l 8080"
+        "docs:dev": "vite",
+        "docs:build": "vite build",
+        "docs:preview": "vite preview"
     },
     "devDependencies": {
+        "@tailwindcss/vite": "^4.1.18",
         "@types/adm-zip": "^0.5.7",
+        "@types/html-minifier-terser": "^7.0.2",
         "@types/node": "^24.10.1",
         "adm-zip": "^0.5.16",
         "esbuild": "^0.27.1",
-        "@types/html-minifier-terser": "^7.0.2",
-        "html-minifier-terser": "^7.2.0"
+        "html-minifier-terser": "^7.2.0",
+        "tailwindcss": "^4.1.18",
+        "vite": "^7.2.7"
     }
 }
