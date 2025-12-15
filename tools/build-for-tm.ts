@@ -17,7 +17,7 @@ export function build() {
 // @author       https://github.com/heyManNice
 // @match        https://www.bilibili.com/video/*
 // @match        https://www.bilibili.com/list/watchlater/*
-// @icon         https://heymannice.github.io/bili-cured-my-neck-pain/assets/bcmnp-logo.png
+// @icon         https://bcmnp.ydcdgo.com/favicon.ico
 // @grant        GM_addStyle
 // ==/UserScript==
 GM_addStyle(\`${style}\`);
