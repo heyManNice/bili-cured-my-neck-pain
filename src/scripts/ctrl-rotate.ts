@@ -209,9 +209,9 @@ class RotateController {
 
         // 优化动画效果的老旋转角度
         let optimizedOldRotate = oldRotate;
-        if (oldRotate === '0deg' && newRotate === '270deg') {
+        if (parseInt(oldRotate) === 0 && parseInt(newRotate) === 270) {
             optimizedOldRotate = '360deg';
-        } else if (oldRotate === '270deg' && newRotate === '0deg') {
+        } else if (parseInt(oldRotate) === 270 && parseInt(newRotate) === 0) {
             optimizedOldRotate = '-90deg';
         }
 
