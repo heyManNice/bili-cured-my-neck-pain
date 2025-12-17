@@ -173,7 +173,7 @@ class RotateController {
             log('未找到当前旋转角度数据');
             return;
         }
-        const angle = parseInt(angleStr, 10);
+        let angle = parseInt(angleStr, 10);
 
         const scaleStr = document.querySelector<HTMLElement>('.bcmnp-scale-items .bcmnp-btn-item.checked')?.dataset.scale;
         if (!scaleStr) {
@@ -190,18 +190,19 @@ class RotateController {
         const scaleX = W / (W * Math.abs(Math.cos(rad)) + H * Math.abs(Math.sin(rad)));
         const scaleY = H / (W * Math.abs(Math.sin(rad)) + H * Math.abs(Math.cos(rad)));
 
-        let scaleNew = Math.min(scaleX, scaleY) * scale;
+        const compositeScale = Math.min(scaleX, scaleY) * scale;
 
-        // 可以修复全屏的时候旋转失效的问题，不知道为什么
+        // 可以修复全屏的时候旋转失效和在视频增强模式下旋转黑屏的问题，不知道为什么
+        // 可能与浏览器底层的视频播放优化算法有关，需要进一步研究
         if (angle === 90 || angle === 270 || angle === 180) {
-            scaleNew += 0.01;
+            angle += 0.0001;
         }
 
         const oldRotate = video.style.rotate || '0deg';
         const oldScale = video.style.scale || '1';
 
         const newRotate = `${angle}deg`;
-        const newScale = `${scaleNew}`;
+        const newScale = `${compositeScale}`;
 
         video.style.rotate = newRotate;
         video.style.scale = newScale;
