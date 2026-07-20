@@ -54,3 +54,85 @@
 .bcmnp-btn-item:hover {
     cursor: pointer;
 }
+
+.bcmnp-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.bcmnp-slider-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 140px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.25);
+    outline: none;
+    cursor: pointer;
+}
+
+.bcmnp-slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--bpx-primary-color, #00AEEC);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.bcmnp-slider-row input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.bcmnp-slider-row input[type="number"] {
+    width: 52px;
+    height: 22px;
+    padding: 0 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 12px;
+    text-align: center;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.bcmnp-slider-row input[type="number"]::-webkit-inner-spin-button,
+.bcmnp-slider-row input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.bcmnp-slider-row input[type="number"]:focus {
+    border-color: var(--bpx-primary-color, #00AEEC);
+}
+
+.bcmnp-minimap {
+    position: relative;
+    width: 160px;
+    height: 90px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    cursor: pointer;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.bcmnp-minimap-viewport {
+    position: absolute;
+    background: rgba(0, 174, 236, 0.2);
+    border: 1px solid var(--bpx-primary-color, #00AEEC);
+    cursor: grab;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.bcmnp-minimap-viewport:active {
+    cursor: grabbing;
+}
