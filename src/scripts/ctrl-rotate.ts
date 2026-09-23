@@ -100,6 +100,16 @@ class RotateController {
         this.scaleInput.addEventListener('change', this.inputOnChange.bind(this));
         this.rotateSlider.addEventListener('input', this.rotateSliderOnInput.bind(this));
         this.rotateInput.addEventListener('change', this.rotateInputOnChange.bind(this));
+        this.scaleSlider.closest('.bcmnp-slider-row')?.addEventListener(
+            'wheel',
+            this.scaleRowOnWheel.bind(this),
+            { passive: false },
+        );
+        this.rotateSlider.closest('.bcmnp-slider-row')?.addEventListener(
+            'wheel',
+            this.rotateRowOnWheel.bind(this),
+            { passive: false },
+        );
         this.resetTranslateButton.addEventListener('click', this.resetTranslation.bind(this));
 
         this.minimap.addEventListener('pointerdown', this.minimapOnPointerDown.bind(this));
@@ -405,6 +415,15 @@ class RotateController {
         this.rotateAndScaleVideo();
     }
 
+    private scaleRowOnWheel(event: WheelEvent) {
+        if (event.deltaY === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = event.deltaY < 0 ? 1 : -1;
+        this.syncScaleUI(parseInt(this.scaleSlider.value, 10) + direction);
+        this.rotateAndScaleVideo();
+    }
+
     private inputOnChange() {
         let value = parseInt(this.scaleInput.value, 10);
         if (isNaN(value)) value = 100;
@@ -429,6 +448,15 @@ class RotateController {
         const value = parseFloat(this.rotateSlider.value);
         if (isNaN(value)) return;
         this.syncRotateUI(value);
+        this.rotateAndScaleVideo();
+    }
+
+    private rotateRowOnWheel(event: WheelEvent) {
+        if (event.deltaY === 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = event.deltaY < 0 ? 1 : -1;
+        this.syncRotateUI(this.getCurrentAngle() + direction);
         this.rotateAndScaleVideo();
     }
 
