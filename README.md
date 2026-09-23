@@ -63,6 +63,18 @@ bun run build          # 输出到 dist/
 
 VS Code 中按 `F5` 启动调试浏览器。
 
+## 发布
+
+发布由 GitHub Actions 在 `v*.*.*` tag 推送后自动完成：
+
+1. 更新 `config/manifest.json` 中的版本号。
+2. 在根目录 `CHANGELOG.md` 顶部添加同版本章节。
+3. 提交并推送代码后，为该提交创建 tag，例如 `v0.3.1`。
+4. 推送 tag；Action 会验证版本、运行测试、构建并发布扩展 ZIP 与 Tampermonkey 脚本。
+
+发布类型根据上一个 tag 与当前 tag 的语义化版本差异自动判断。版本号、CHANGELOG
+章节或递增规则不一致时，发布会直接终止。
+
 ## 反馈
 
 [提交 Issue](https://github.com/heyManNice/bili-cured-my-neck-pain/issues/new)

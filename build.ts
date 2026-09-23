@@ -31,27 +31,26 @@ async function main() {
     dir.mkdir(distDir);
     dir.cpdir(metaDir, distDir);
 
-    // main.ts
-    esbuild.build({
-        entryPoints: ['src/main.ts'],
-        outfile: 'dist/main.js',
-        bundle: true,
-        minify: true,
-        sourcemap: false,
-        target: ['es2020'],
-        plugins: [htmlMinifyPlugin],
-        define: {
-            __VERSION__: JSON.stringify(manifest.version),
-        }
-    }).catch(() => process.exit(1));
-
-    // main.css
-    esbuild.build({
-        entryPoints: ['src/styles/main.css'],
-        outfile: 'dist/main.css',
-        minify: true,
-        loader: { '.css': 'css' }
-    }).catch(() => process.exit(1));
+    await Promise.all([
+        esbuild.build({
+            entryPoints: ['src/main.ts'],
+            outfile: 'dist/main.js',
+            bundle: true,
+            minify: true,
+            sourcemap: false,
+            target: ['es2020'],
+            plugins: [htmlMinifyPlugin],
+            define: {
+                __VERSION__: JSON.stringify(manifest.version),
+            }
+        }),
+        esbuild.build({
+            entryPoints: ['src/styles/main.css'],
+            outfile: 'dist/main.css',
+            minify: true,
+            loader: { '.css': 'css' }
+        }),
+    ]);
 }
 
 if (module === require.main) {

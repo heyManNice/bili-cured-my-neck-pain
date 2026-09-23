@@ -1,5 +1,6 @@
 node_modules
 dist
 *.lock
+!bun.lock
 release
 docs-dist

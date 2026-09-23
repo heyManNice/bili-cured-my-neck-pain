@@ -2,7 +2,8 @@
     "scripts": {
         "build": "bun build.ts",
         "build:tm": "bun tools/build-for-tm.ts",
-        "release": "bun tools/release.ts",
+        "release": "bun run build && bun run build:tm && bun run package:release",
+        "package:release": "bun tools/release.ts",
         "test": "bun test",
         "docs:dev": "vite",
         "docs:build": "vite build",
