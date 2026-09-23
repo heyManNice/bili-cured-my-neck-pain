@@ -7,6 +7,19 @@ import {
     rotateToggleKeyframes
 } from './animates.ts';
 
+import {
+    calculateVideoGeometry,
+    contentPointToMinimap,
+    getVisiblePolygon,
+    minimapPointToContent,
+    viewCenterToTranslation,
+    type Point,
+    type VideoGeometry,
+} from './video-geometry.ts';
+
+const MINIMAP_WIDTH = 160;
+const MINIMAP_HEIGHT = 90;
+
 class RotateController {
     private toggle: HTMLElement;
     private panel: HTMLElement;
@@ -15,11 +28,20 @@ class RotateController {
     private scaleSlider: HTMLInputElement;
     private scaleInput: HTMLInputElement;
     private minimap: HTMLElement;
-    private viewport: HTMLElement;
+    private minimapCanvas: HTMLCanvasElement;
+    private viewport: SVGPolygonElement;
+    private viewportDirection: SVGTextElement;
+    private viewportControls: SVGPolygonElement;
+    private resetTranslateButton: HTMLButtonElement;
     private rotateSlider: HTMLInputElement;
     private rotateInput: HTMLInputElement;
-    private translateX = 0;
-    private translateY = 0;
+
+    // 当前播放器中心对应的视频自身坐标，旋转、缩放和导航共用这一份状态。
+    private viewCenter: Point = { x: 0, y: 0 };
+    private activePointerId: number | null = null;
+    private dragOffset: Point = { x: 0, y: 0 };
+    private resizeObserver: ResizeObserver | null = null;
+    private thumbnailTimer: number | null = null;
 
     // 显示和隐藏面板共用的定时器
     private timer: number | null = null;
@@ -43,12 +65,16 @@ class RotateController {
         }
 
         const minimap = panel.querySelector<HTMLElement>('.bcmnp-minimap');
-        const viewport = panel.querySelector<HTMLElement>('.bcmnp-minimap-viewport');
-        if (!minimap || !viewport) {
+        const minimapCanvas = panel.querySelector<HTMLCanvasElement>('.bcmnp-minimap-canvas');
+        const viewport = panel.querySelector<SVGPolygonElement>('.bcmnp-minimap-viewport');
+        const viewportDirection = panel.querySelector<SVGTextElement>('.bcmnp-minimap-direction');
+        const viewportControls = panel.querySelector<SVGPolygonElement>('.bcmnp-minimap-controls');
+        const resetTranslateButton = panel.querySelector<HTMLButtonElement>('.bcmnp-reset-translate');
+        if (!minimap || !minimapCanvas || !viewport || !viewportDirection
+            || !viewportControls || !resetTranslateButton) {
             throw new Error('缩略图未找到');
         }
 
-        // 赋值
         this.toggle = toggle;
         this.panel = panel;
         this.rotateItems = rotateItems;
@@ -56,41 +82,41 @@ class RotateController {
         this.scaleSlider = scaleSlider;
         this.scaleInput = scaleInput;
         this.minimap = minimap;
+        this.minimapCanvas = minimapCanvas;
         this.viewport = viewport;
+        this.viewportDirection = viewportDirection;
+        this.viewportControls = viewportControls;
+        this.resetTranslateButton = resetTranslateButton;
         this.rotateSlider = rotateSlider;
         this.rotateInput = rotateInput;
 
-        // 监听事件
         this.toggle.addEventListener('mouseenter', this.toggleOnMouseEnter.bind(this));
         this.toggle.addEventListener('mouseleave', this.toggleOnMouseLeave.bind(this));
-
         this.panel.addEventListener('mouseenter', this.panelOnMouseEnter.bind(this));
         this.panel.addEventListener('mouseleave', this.panelOnMouseLeave.bind(this));
-
         this.rotateItems.addEventListener('click', this.rotateItemOnClick.bind(this));
         this.scaleItems.addEventListener('click', this.scaleItemOnClick.bind(this));
-
         this.scaleSlider.addEventListener('input', this.sliderOnInput.bind(this));
         this.scaleInput.addEventListener('change', this.inputOnChange.bind(this));
-
         this.rotateSlider.addEventListener('input', this.rotateSliderOnInput.bind(this));
         this.rotateInput.addEventListener('change', this.rotateInputOnChange.bind(this));
+        this.resetTranslateButton.addEventListener('click', this.resetTranslation.bind(this));
 
-        this.minimap.addEventListener('mousedown', this.onViewportMouseDown.bind(this));
-        this.viewport.addEventListener('mousedown', this.onViewportMouseDown.bind(this));
+        this.minimap.addEventListener('pointerdown', this.minimapOnPointerDown.bind(this));
+        this.minimap.addEventListener('pointermove', this.minimapOnPointerMove.bind(this));
+        this.minimap.addEventListener('pointerup', this.minimapOnPointerUp.bind(this));
+        this.minimap.addEventListener('pointercancel', this.minimapOnPointerUp.bind(this));
+
+        this.observePlayerSize();
     }
 
-    // 共用定时器
     private useTeimer(callback: () => void, delay = 300) {
         if (this.timer) {
             clearTimeout(this.timer);
         }
-        this.timer = window.setTimeout(() => {
-            callback();
-        }, delay);
+        this.timer = window.setTimeout(callback, delay);
     }
 
-    // 显示面板
     private showPanel() {
         if (this.panel.style.display === 'flex') {
             return;
@@ -98,146 +124,235 @@ class RotateController {
         this.panel.style.display = 'flex';
         this.updatePanelPosition();
         this.updateMinimap();
+        this.startThumbnailRefresh();
     }
 
-    // 隐藏面板
     private hidePanel() {
         if (this.panel.style.display === 'none') {
             return;
         }
         this.panel.style.display = 'none';
+        this.stopThumbnailRefresh();
     }
 
-    // 获取视频容器
     private getVideoContainer(): HTMLElement | null {
         return document.querySelector<HTMLElement>('.bpx-player-video-wrap');
     }
 
-    // 获取当前旋转角度（统一入口）
+    private getPlayerViewport(): HTMLElement | null {
+        return document.querySelector<HTMLElement>('.bpx-player-video-area')
+            ?? this.getVideoContainer()?.parentElement
+            ?? null;
+    }
+
     private getCurrentAngle(): number {
         const value = parseFloat(this.rotateSlider.value);
         return isNaN(value) ? 0 : value;
     }
 
-    // 计算复合缩放（用户缩放 × 旋转自适应补偿）
-    private getCompositeScale(): number {
-        const userScale = parseInt(this.scaleSlider.value, 10) / 100;
-        const angle = this.getCurrentAngle();
-        const rad = angle * Math.PI / 180;
-        const W = 16;
-        const H = 9;
-        const scaleX = W / (W * Math.abs(Math.cos(rad)) + H * Math.abs(Math.sin(rad)));
-        const scaleY = H / (W * Math.abs(Math.sin(rad)) + H * Math.abs(Math.cos(rad)));
-        return Math.min(scaleX, scaleY) * userScale;
+    private getUserScale(): number {
+        const value = parseInt(this.scaleSlider.value, 10);
+        return (isNaN(value) ? 100 : value) / 100;
     }
 
-    // 更新缩略图视口框
-    private updateMinimap() {
-        const compositeScale = this.getCompositeScale();
-
-        const MW = 160;
-        const MH = 90;
-
-        if (compositeScale <= 1) {
-            this.viewport.style.width = `${MW}px`;
-            this.viewport.style.height = `${MH}px`;
-            this.viewport.style.left = '0px';
-            this.viewport.style.top = '0px';
-            return;
+    private getGeometry(): VideoGeometry | null {
+        const content = this.getVideoContainer();
+        const viewport = this.getPlayerViewport();
+        if (!content || !viewport || !content.clientWidth || !content.clientHeight
+            || !viewport.clientWidth || !viewport.clientHeight) {
+            return null;
         }
 
-        // 视口大小（固定 minimap 比例 16:9）
-        const vw = MW / compositeScale;
-        const vh = MH / compositeScale;
-        this.viewport.style.width = `${vw}px`;
-        this.viewport.style.height = `${vh}px`;
-
-        // 视口位置（translate 映射到 minimap 坐标）
-        const container = this.getVideoContainer();
-        if (!container) return;
-        const cw = container.clientWidth;
-        const ch = container.clientHeight;
-
-        const offsetX = -this.translateX / (compositeScale * cw) * MW;
-        const offsetY = -this.translateY / (compositeScale * ch) * MH;
-
-        const left = (MW - vw) / 2 + offsetX;
-        const top = (MH - vh) / 2 + offsetY;
-
-        this.viewport.style.left = `${left}px`;
-        this.viewport.style.top = `${top}px`;
+        return calculateVideoGeometry({
+            contentWidth: content.clientWidth,
+            contentHeight: content.clientHeight,
+            viewportWidth: viewport.clientWidth,
+            viewportHeight: viewport.clientHeight,
+            angle: this.getCurrentAngle(),
+            userScale: this.getUserScale(),
+        });
     }
 
-    // 设置视频 translate
-    private applyTranslate() {
+    private updateMinimap() {
+        this.drawMinimapFrame();
+        const geometry = this.getGeometry();
+        if (!geometry) return;
+
+        const points = getVisiblePolygon(geometry, this.viewCenter)
+            .map(point => contentPointToMinimap(point, geometry, MINIMAP_WIDTH, MINIMAP_HEIGHT));
+        this.viewport.setAttribute('points', this.serializePoints(points));
+        this.updateViewportDirection(points);
+
+        this.viewport.style.cursor = 'grab';
+    }
+
+    private serializePoints(points: Point[]) {
+        return points.map(point => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
+    }
+
+    private interpolatePoint(start: Point, end: Point, progress: number): Point {
+        return {
+            x: start.x + (end.x - start.x) * progress,
+            y: start.y + (end.y - start.y) * progress,
+        };
+    }
+
+    private updateViewportDirection(points: Point[]) {
+        const [topLeft, topRight, bottomRight, bottomLeft] = points;
+        if (!topLeft || !topRight || !bottomRight || !bottomLeft) return;
+
+        // 控制栏始终位于屏幕坐标的底边，因此旋转后仍能明确表示“下方”。
+        const controlsTopLeft = this.interpolatePoint(topLeft, bottomLeft, 0.91);
+        const controlsTopRight = this.interpolatePoint(topRight, bottomRight, 0.91);
+        this.viewportControls.setAttribute('points', this.serializePoints([
+            controlsTopLeft,
+            controlsTopRight,
+            bottomRight,
+            bottomLeft,
+        ]));
+
+        const center = {
+            x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
+            y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4,
+        };
+        const topWidth = Math.hypot(topRight.x - topLeft.x, topRight.y - topLeft.y);
+        const sideHeight = Math.hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y);
+        const fontSize = Math.max(10, Math.min(60, Math.min(topWidth, sideHeight) * 1.1));
+        const rotation = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x) * 180 / Math.PI;
+
+        this.viewportDirection.setAttribute('x', center.x.toFixed(2));
+        this.viewportDirection.setAttribute('y', center.y.toFixed(2));
+        this.viewportDirection.setAttribute('font-size', fontSize.toFixed(2));
+        this.viewportDirection.setAttribute(
+            'transform',
+            `rotate(${rotation.toFixed(2)} ${center.x.toFixed(2)} ${center.y.toFixed(2)})`,
+        );
+    }
+
+    private drawMinimapFrame() {
+        const video = document.querySelector<HTMLVideoElement>('.bpx-player-video-wrap video');
+        if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+
+        const context = this.minimapCanvas.getContext('2d');
+        if (!context) return;
+        try {
+            context.drawImage(video, 0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
+            this.minimap.classList.add('has-frame');
+        } catch {
+            this.minimap.classList.remove('has-frame');
+        }
+    }
+
+    private startThumbnailRefresh() {
+        this.stopThumbnailRefresh();
+        this.drawMinimapFrame();
+        this.thumbnailTimer = window.setInterval(() => this.drawMinimapFrame(), 500);
+    }
+
+    private stopThumbnailRefresh() {
+        if (this.thumbnailTimer !== null) {
+            clearInterval(this.thumbnailTimer);
+            this.thumbnailTimer = null;
+        }
+    }
+
+    private applyViewCenter(geometry: VideoGeometry) {
         const video = this.getVideoContainer();
         if (!video) return;
-        video.style.translate = `${this.translateX}px ${this.translateY}px`;
+        const translation = viewCenterToTranslation(this.viewCenter, geometry);
+        video.style.translate = `${translation.x}px ${translation.y}px`;
     }
 
-    // 缩略图/视口框 mousedown
-    private onViewportMouseDown(e: MouseEvent) {
-        e.preventDefault();
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const startTX = this.translateX;
-        const startTY = this.translateY;
-
-        const onMove = (ev: MouseEvent) => this.onViewportMouseMove(ev, startX, startY, startTX, startTY);
-        const onUp = (ev: MouseEvent) => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-            this.onViewportMouseUp();
+    private pointerToMinimap(e: PointerEvent): Point {
+        const rect = this.minimap.getBoundingClientRect();
+        return {
+            x: (e.clientX - rect.left) / rect.width * MINIMAP_WIDTH,
+            y: (e.clientY - rect.top) / rect.height * MINIMAP_HEIGHT,
         };
-
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
     }
 
-    // 拖动中
-    private onViewportMouseMove(
-        e: MouseEvent,
-        startX: number,
-        startY: number,
-        startTX: number,
-        startTY: number
-    ) {
-        const compositeScale = this.getCompositeScale();
-        if (compositeScale <= 1) return;
-
-        const container = this.getVideoContainer();
-        if (!container) return;
-        const cw = container.clientWidth;
-        const ch = container.clientHeight;
-
-        // minimap 轴对齐，鼠标位移直接映射到 translate 变化
-        const MW = 160;
-        const factor = compositeScale * cw / MW;
-        const mappedDX = -(e.clientX - startX) * factor;
-        const mappedDY = -(e.clientY - startY) * factor;
-
-        let newTX = startTX + mappedDX;
-        let newTY = startTY + mappedDY;
-
-        // clamp 范围（基于复合缩放）
-        const maxTX = cw * (compositeScale - 1) / 2;
-        const maxTY = ch * (compositeScale - 1) / 2;
-        newTX = Math.max(-maxTX, Math.min(maxTX, newTX));
-        newTY = Math.max(-maxTY, Math.min(maxTY, newTY));
-
-        this.translateX = newTX;
-        this.translateY = newTY;
-        this.applyTranslate();
+    private moveViewportToPointer(e: PointerEvent) {
+        const geometry = this.getGeometry();
+        if (!geometry) return;
+        const contentPoint = minimapPointToContent(
+            this.pointerToMinimap(e),
+            geometry,
+            MINIMAP_WIDTH,
+            MINIMAP_HEIGHT,
+        );
+        this.viewCenter = {
+            x: contentPoint.x + this.dragOffset.x,
+            y: contentPoint.y + this.dragOffset.y,
+        };
+        this.applyViewCenter(geometry);
         this.updateMinimap();
     }
 
-    // 拖动结束
-    private onViewportMouseUp() {}
+    private minimapOnPointerDown(e: PointerEvent) {
+        if (e.button !== 0) return;
+        const geometry = this.getGeometry();
+        if (!geometry) return;
 
-    // 鼠标移入触发器
-    private toggleOnMouseEnter(event: Event) {
-        // 触发动画
+        e.preventDefault();
+        this.activePointerId = e.pointerId;
+        this.minimap.setPointerCapture(e.pointerId);
+        const contentPoint = minimapPointToContent(
+            this.pointerToMinimap(e),
+            geometry,
+            MINIMAP_WIDTH,
+            MINIMAP_HEIGHT,
+        );
+
+        if (e.target === this.viewport) {
+            this.dragOffset = {
+                x: this.viewCenter.x - contentPoint.x,
+                y: this.viewCenter.y - contentPoint.y,
+            };
+        } else {
+            this.dragOffset = { x: 0, y: 0 };
+            this.moveViewportToPointer(e);
+        }
+    }
+
+    private minimapOnPointerMove(e: PointerEvent) {
+        if (e.pointerId !== this.activePointerId) return;
+        e.preventDefault();
+        this.moveViewportToPointer(e);
+    }
+
+    private minimapOnPointerUp(e: PointerEvent) {
+        if (e.pointerId !== this.activePointerId) return;
+        if (this.minimap.hasPointerCapture(e.pointerId)) {
+            this.minimap.releasePointerCapture(e.pointerId);
+        }
+        this.activePointerId = null;
+    }
+
+    private resetTranslation() {
+        const geometry = this.getGeometry();
+        if (!geometry) return;
+        this.viewCenter = { x: 0, y: 0 };
+        this.applyViewCenter(geometry);
+        this.updateMinimap();
+    }
+
+    private observePlayerSize() {
+        if (typeof ResizeObserver === 'undefined') return;
+        const content = this.getVideoContainer();
+        const viewport = this.getPlayerViewport();
+        if (!content || !viewport) return;
+
+        this.resizeObserver = new ResizeObserver(() => {
+            const geometry = this.getGeometry();
+            if (!geometry) return;
+            this.applyScaleAndRotation(geometry, false);
+            this.updateMinimap();
+        });
+        this.resizeObserver.observe(content);
+        if (viewport !== content) this.resizeObserver.observe(viewport);
+    }
+
+    private toggleOnMouseEnter() {
         if (!this.isToggleAnimating) {
             this.isToggleAnimating = true;
             animateGroup(this.toggle, rotateToggleKeyframes, {
@@ -248,184 +363,123 @@ class RotateController {
                 this.isToggleAnimating = false;
             }, 1500);
         }
-        this.useTeimer(() => {
-            this.showPanel();
-        });
+        this.useTeimer(() => this.showPanel());
     }
 
-    // 鼠标移出触发器
-    private toggleOnMouseLeave(event: Event) {
-        this.useTeimer(() => {
-            this.hidePanel();
-        });
+    private toggleOnMouseLeave() {
+        this.useTeimer(() => this.hidePanel());
     }
 
-    // 鼠标移入面板
-    private panelOnMouseEnter(event: Event) {
-        if (this.timer) {
-            clearTimeout(this.timer);
-        }
+    private panelOnMouseEnter() {
+        if (this.timer) clearTimeout(this.timer);
     }
 
-    // 鼠标移出面板
-    private panelOnMouseLeave(event: Event) {
-        this.useTeimer(() => {
-            this.hidePanel();
-        });
+    private panelOnMouseLeave() {
+        this.useTeimer(() => this.hidePanel());
     }
 
-    // 更新面板位置
     private updatePanelPosition() {
         const toggleRect = this.toggle.getBoundingClientRect();
         const panelRect = this.panel.getBoundingClientRect();
-
         const screenType = document.querySelector<HTMLElement>('.bpx-player-container')?.dataset.screen ?? 'normal';
 
-        if (screenType === 'full' || screenType === 'web') {
-            this.panel.style.bottom = `74px`;
-        } else {
-            this.panel.style.bottom = `41px`;
-        }
+        this.panel.style.bottom = screenType === 'full' || screenType === 'web' ? '74px' : '41px';
         this.panel.style.right = `${(toggleRect.width - panelRect.width) / 2}px`;
     }
 
-    // 同步滑条、输入框和快捷按钮的状态
     private syncScaleUI(value: number) {
-        const strValue = String(value);
+        const normalized = Math.max(10, Math.min(1000, value));
+        const strValue = String(normalized);
         this.scaleSlider.value = strValue;
         this.scaleInput.value = strValue;
 
-        // 更新快捷按钮选中状态
         const buttons = this.scaleItems.querySelectorAll<HTMLElement>('.bcmnp-btn-item');
         for (const btn of buttons) {
             const btnScale = parseFloat(btn.dataset.scale || '') * 100;
-            if (btnScale === value) {
-                btn.classList.add('checked');
-            } else {
-                btn.classList.remove('checked');
-            }
+            btn.classList.toggle('checked', btnScale === normalized);
         }
     }
 
-    // 滑条拖动
-    private sliderOnInput(event: Event) {
-        const value = parseInt(this.scaleSlider.value, 10);
-        this.syncScaleUI(value);
+    private sliderOnInput() {
+        this.syncScaleUI(parseInt(this.scaleSlider.value, 10));
         this.rotateAndScaleVideo();
     }
 
-    // 输入框变更
-    private inputOnChange(event: Event) {
+    private inputOnChange() {
         let value = parseInt(this.scaleInput.value, 10);
-        if (isNaN(value)) {
-            value = 100;
-        }
-        value = Math.max(10, value);
+        if (isNaN(value)) value = 100;
         this.syncScaleUI(value);
         this.rotateAndScaleVideo();
     }
 
-    // 同步旋转滑条、输入框和快捷按钮的状态
     private syncRotateUI(value: number) {
-        const strValue = String(value);
+        const normalized = Math.max(0, Math.min(360, value));
+        const strValue = String(normalized);
         this.rotateSlider.value = strValue;
         this.rotateInput.value = strValue;
 
         const buttons = this.rotateItems.querySelectorAll<HTMLElement>('.bcmnp-btn-item');
         for (const btn of buttons) {
             const btnAngle = parseFloat(btn.dataset.angle || '0');
-            // 允许浮点微调（0.0001°）仍匹配预设按钮
-            if (Math.abs(btnAngle - value) < 0.01) {
-                btn.classList.add('checked');
-            } else {
-                btn.classList.remove('checked');
-            }
+            btn.classList.toggle('checked', Math.abs(btnAngle - normalized) < 0.01);
         }
     }
 
-    // 旋转滑条拖动
-    private rotateSliderOnInput(event: Event) {
+    private rotateSliderOnInput() {
         const value = parseFloat(this.rotateSlider.value);
         if (isNaN(value)) return;
         this.syncRotateUI(value);
         this.rotateAndScaleVideo();
     }
 
-    // 旋转输入框变更
-    private rotateInputOnChange(event: Event) {
+    private rotateInputOnChange() {
         let value = parseFloat(this.rotateInput.value);
-        if (isNaN(value)) {
-            value = 0;
-        }
-        // 边界检查：clamp 到 0–360
-        value = Math.max(0, Math.min(360, value));
+        if (isNaN(value)) value = 0;
         this.syncRotateUI(value);
         this.rotateAndScaleVideo();
     }
 
-    // 鼠标点击旋转选项
     private rotateItemOnClick(event: Event) {
         const target = event.target as HTMLElement;
-        if (!target.classList.contains('bcmnp-btn-item')) {
-            return;
-        }
-
-        const angle = parseFloat(target.dataset.angle || '0');
-        this.syncRotateUI(angle);
-
+        if (!target.classList.contains('bcmnp-btn-item')) return;
+        this.syncRotateUI(parseFloat(target.dataset.angle || '0'));
         this.rotateAndScaleVideo();
     }
 
-    // 鼠标点击缩放选项
     private scaleItemOnClick(event: Event) {
         const target = event.target as HTMLElement;
-        if (!target.classList.contains('bcmnp-btn-item')) {
-            return;
-        }
-        // 更新选中状态
-        const checked = this.scaleItems.querySelector<HTMLElement>('.bcmnp-scale-items .bcmnp-btn-item.checked');
-        if (checked) {
-            checked.classList.remove('checked');
-        }
-        target.classList.add('checked');
-
-        // 同步滑条和输入框
-        const btnScale = parseFloat(target.dataset.scale || '1') * 100;
-        this.syncScaleUI(btnScale);
-
+        if (!target.classList.contains('bcmnp-btn-item')) return;
+        this.syncScaleUI(parseFloat(target.dataset.scale || '1') * 100);
         this.rotateAndScaleVideo();
     }
 
-    // 旋转视频
-    private rotateAndScaleVideo() {
-        const video = document.querySelector<HTMLVideoElement>('.bpx-player-video-wrap');
-        if (!video) {
-            log('视频元素未找到，无法旋转');
-            return;
-        }
-
+    private getAppliedAngle() {
         let angle = this.getCurrentAngle();
-        const compositeScale = this.getCompositeScale();
-
-        // 可以修复全屏的时候旋转失效和在视频增强模式下旋转黑屏的问题，不知道为什么
-        // 可能与浏览器底层的视频播放优化算法有关，需要进一步研究
-        // 仅在角度非常接近 90/180/270 时加微小偏移，避免影响任意角度
         const nearestCardinal = Math.round(angle / 90) * 90;
         if (nearestCardinal !== 0 && nearestCardinal !== 360
             && Math.abs(angle - nearestCardinal) < 0.01) {
             angle += 0.0001;
         }
+        return angle;
+    }
+
+    private applyScaleAndRotation(geometry: VideoGeometry, animate: boolean) {
+        const video = this.getVideoContainer();
+        if (!video) return;
 
         const oldRotate = video.style.rotate || '0deg';
         const oldScale = video.style.scale || '1';
-
+        const oldTranslate = video.style.translate || '0px 0px';
+        const angle = this.getAppliedAngle();
         const newRotate = `${angle}deg`;
-        const newScale = `${compositeScale}`;
+        const newScale = `${geometry.scale}`;
 
+        this.applyViewCenter(geometry);
+        const newTranslate = video.style.translate;
         video.style.rotate = newRotate;
         video.style.scale = newScale;
 
-        // 优化动画效果的老旋转角度
+        if (!animate) return;
         let optimizedOldRotate = oldRotate;
         if (parseInt(oldRotate) === 0 && parseInt(newRotate) === 270) {
             optimizedOldRotate = '360deg';
@@ -434,23 +488,21 @@ class RotateController {
         }
 
         video.animate([
-            {
-                rotate: optimizedOldRotate,
-                scale: oldScale
-            },
-            {
-                rotate: newRotate,
-                scale: newScale
-            }
+            { rotate: optimizedOldRotate, scale: oldScale, translate: oldTranslate },
+            { rotate: newRotate, scale: newScale, translate: newTranslate }
         ], {
             duration: 300,
             easing: 'ease-in-out',
         });
+    }
 
-        // 缩放改变后重置平移并刷新缩略图
-        this.translateX = 0;
-        this.translateY = 0;
-        this.applyTranslate();
+    private rotateAndScaleVideo() {
+        const geometry = this.getGeometry();
+        if (!geometry) {
+            log('视频元素未找到，无法旋转');
+            return;
+        }
+        this.applyScaleAndRotation(geometry, true);
         this.updateMinimap();
     }
 }
