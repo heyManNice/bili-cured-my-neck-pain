@@ -147,15 +147,14 @@
     background: #111820;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 2px;
-    cursor: pointer;
+    cursor: grab;
     margin-top: 4px;
     overflow: hidden;
     touch-action: none;
 }
 
 .bcmnp-minimap-placeholder,
-.bcmnp-minimap-canvas,
-.bcmnp-minimap-overlay {
+.bcmnp-minimap-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -176,19 +175,6 @@
     background-size: 16px 15px;
 }
 
-.bcmnp-minimap-placeholder::before {
-    content: '';
-    position: absolute;
-    top: 6px;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-bottom: 6px solid rgba(255, 255, 255, 0.55);
-    transform: translateX(-50%);
-}
-
 .bcmnp-minimap-canvas {
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -198,41 +184,6 @@
     opacity: 1;
 }
 
-.bcmnp-minimap-overlay {
-    overflow: hidden;
-}
-
-.bcmnp-minimap-viewport {
-    fill: rgba(0, 174, 236, 0.18);
-    stroke: var(--bpx-primary-color, #00AEEC);
-    stroke-width: 1.5;
-    stroke-linejoin: round;
-    vector-effect: non-scaling-stroke;
-    cursor: grab;
-}
-
-.bcmnp-minimap-direction {
-    fill: #fff;
-    opacity: 0.7;
-    stroke: rgba(0, 0, 0, 0.35);
-    stroke-width: 0.6px;
-    paint-order: stroke fill;
-    font-family: Arial, sans-serif;
-    font-weight: 800;
-    text-anchor: middle;
-    dominant-baseline: central;
-    pointer-events: none;
-    user-select: none;
-}
-
-.bcmnp-minimap-controls {
-    fill: rgba(0, 174, 236, 0.72);
-    stroke: rgba(255, 255, 255, 0.5);
-    stroke-width: 0.6px;
-    vector-effect: non-scaling-stroke;
-    pointer-events: none;
-}
-
-.bcmnp-minimap-viewport:active {
+.bcmnp-minimap:active {
     cursor: grabbing;
 }

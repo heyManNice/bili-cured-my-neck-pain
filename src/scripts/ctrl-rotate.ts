@@ -9,16 +9,11 @@ import {
 
 import {
     calculateVideoGeometry,
-    contentPointToMinimap,
-    getVisiblePolygon,
-    minimapPointToContent,
+    screenPointToContent,
     viewCenterToTranslation,
     type Point,
     type VideoGeometry,
 } from './video-geometry.ts';
-
-const MINIMAP_WIDTH = 160;
-const MINIMAP_HEIGHT = 90;
 
 class RotateController {
     private toggle: HTMLElement;
@@ -29,17 +24,15 @@ class RotateController {
     private scaleInput: HTMLInputElement;
     private minimap: HTMLElement;
     private minimapCanvas: HTMLCanvasElement;
-    private viewport: SVGPolygonElement;
-    private viewportDirection: SVGTextElement;
-    private viewportControls: SVGPolygonElement;
     private resetTranslateButton: HTMLButtonElement;
     private rotateSlider: HTMLInputElement;
     private rotateInput: HTMLInputElement;
 
-    // 当前播放器中心对应的视频自身坐标，旋转、缩放和导航共用这一份状态。
+    // 当前播放器中心对应的视频自身坐标，旋转、缩放和位置移动共用这一份状态。
     private viewCenter: Point = { x: 0, y: 0 };
     private activePointerId: number | null = null;
-    private dragOffset: Point = { x: 0, y: 0 };
+    private dragStartPointer: Point = { x: 0, y: 0 };
+    private dragStartCenter: Point = { x: 0, y: 0 };
     private resizeObserver: ResizeObserver | null = null;
     private thumbnailTimer: number | null = null;
 
@@ -66,13 +59,9 @@ class RotateController {
 
         const minimap = panel.querySelector<HTMLElement>('.bcmnp-minimap');
         const minimapCanvas = panel.querySelector<HTMLCanvasElement>('.bcmnp-minimap-canvas');
-        const viewport = panel.querySelector<SVGPolygonElement>('.bcmnp-minimap-viewport');
-        const viewportDirection = panel.querySelector<SVGTextElement>('.bcmnp-minimap-direction');
-        const viewportControls = panel.querySelector<SVGPolygonElement>('.bcmnp-minimap-controls');
         const resetTranslateButton = panel.querySelector<HTMLButtonElement>('.bcmnp-reset-translate');
-        if (!minimap || !minimapCanvas || !viewport || !viewportDirection
-            || !viewportControls || !resetTranslateButton) {
-            throw new Error('缩略图未找到');
+        if (!minimap || !minimapCanvas || !resetTranslateButton) {
+            throw new Error('视频预览未找到');
         }
 
         this.toggle = toggle;
@@ -83,9 +72,6 @@ class RotateController {
         this.scaleInput = scaleInput;
         this.minimap = minimap;
         this.minimapCanvas = minimapCanvas;
-        this.viewport = viewport;
-        this.viewportDirection = viewportDirection;
-        this.viewportControls = viewportControls;
         this.resetTranslateButton = resetTranslateButton;
         this.rotateSlider = rotateSlider;
         this.rotateInput = rotateInput;
@@ -185,70 +171,45 @@ class RotateController {
 
     private updateMinimap() {
         this.drawMinimapFrame();
-        const geometry = this.getGeometry();
-        if (!geometry) return;
-
-        const points = getVisiblePolygon(geometry, this.viewCenter)
-            .map(point => contentPointToMinimap(point, geometry, MINIMAP_WIDTH, MINIMAP_HEIGHT));
-        this.viewport.setAttribute('points', this.serializePoints(points));
-        this.updateViewportDirection(points);
-
-        this.viewport.style.cursor = 'grab';
-    }
-
-    private serializePoints(points: Point[]) {
-        return points.map(point => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
-    }
-
-    private interpolatePoint(start: Point, end: Point, progress: number): Point {
-        return {
-            x: start.x + (end.x - start.x) * progress,
-            y: start.y + (end.y - start.y) * progress,
-        };
-    }
-
-    private updateViewportDirection(points: Point[]) {
-        const [topLeft, topRight, bottomRight, bottomLeft] = points;
-        if (!topLeft || !topRight || !bottomRight || !bottomLeft) return;
-
-        // 控制栏始终位于屏幕坐标的底边，因此旋转后仍能明确表示“下方”。
-        const controlsTopLeft = this.interpolatePoint(topLeft, bottomLeft, 0.91);
-        const controlsTopRight = this.interpolatePoint(topRight, bottomRight, 0.91);
-        this.viewportControls.setAttribute('points', this.serializePoints([
-            controlsTopLeft,
-            controlsTopRight,
-            bottomRight,
-            bottomLeft,
-        ]));
-
-        const center = {
-            x: (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4,
-            y: (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4,
-        };
-        const topWidth = Math.hypot(topRight.x - topLeft.x, topRight.y - topLeft.y);
-        const sideHeight = Math.hypot(bottomLeft.x - topLeft.x, bottomLeft.y - topLeft.y);
-        const fontSize = Math.max(10, Math.min(60, Math.min(topWidth, sideHeight) * 1.1));
-        const rotation = Math.atan2(topRight.y - topLeft.y, topRight.x - topLeft.x) * 180 / Math.PI;
-
-        this.viewportDirection.setAttribute('x', center.x.toFixed(2));
-        this.viewportDirection.setAttribute('y', center.y.toFixed(2));
-        this.viewportDirection.setAttribute('font-size', fontSize.toFixed(2));
-        this.viewportDirection.setAttribute(
-            'transform',
-            `rotate(${rotation.toFixed(2)} ${center.x.toFixed(2)} ${center.y.toFixed(2)})`,
-        );
     }
 
     private drawMinimapFrame() {
         const video = document.querySelector<HTMLVideoElement>('.bpx-player-video-wrap video');
-        if (!video || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
+        const geometry = this.getGeometry();
+        if (!video || !geometry || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+            this.minimap.classList.remove('has-frame');
+            return;
+        }
 
         const context = this.minimapCanvas.getContext('2d');
         if (!context) return;
         try {
-            context.drawImage(video, 0, 0, MINIMAP_WIDTH, MINIMAP_HEIGHT);
+            const { width, height } = this.minimapCanvas;
+            const xScale = width / geometry.viewportWidth;
+            const yScale = height / geometry.viewportHeight;
+            const translation = viewCenterToTranslation(this.viewCenter, geometry);
+
+            context.resetTransform();
+            context.fillStyle = '#111820';
+            context.fillRect(0, 0, width, height);
+            context.setTransform(
+                xScale, 0, 0, yScale,
+                width / 2 + translation.x * xScale,
+                height / 2 + translation.y * yScale,
+            );
+            context.rotate(geometry.radians);
+            context.scale(geometry.scale, geometry.scale);
+            context.drawImage(
+                video,
+                -geometry.contentWidth / 2,
+                -geometry.contentHeight / 2,
+                geometry.contentWidth,
+                geometry.contentHeight,
+            );
+            context.resetTransform();
             this.minimap.classList.add('has-frame');
         } catch {
+            context.resetTransform();
             this.minimap.classList.remove('has-frame');
         }
     }
@@ -256,7 +217,7 @@ class RotateController {
     private startThumbnailRefresh() {
         this.stopThumbnailRefresh();
         this.drawMinimapFrame();
-        this.thumbnailTimer = window.setInterval(() => this.drawMinimapFrame(), 500);
+        this.thumbnailTimer = window.setInterval(() => this.drawMinimapFrame(), 100);
     }
 
     private stopThumbnailRefresh() {
@@ -273,61 +234,48 @@ class RotateController {
         video.style.translate = `${translation.x}px ${translation.y}px`;
     }
 
-    private pointerToMinimap(e: PointerEvent): Point {
-        const rect = this.minimap.getBoundingClientRect();
-        return {
-            x: (e.clientX - rect.left) / rect.width * MINIMAP_WIDTH,
-            y: (e.clientY - rect.top) / rect.height * MINIMAP_HEIGHT,
-        };
-    }
-
-    private moveViewportToPointer(e: PointerEvent) {
+    private movePreviewWithPointer(e: PointerEvent) {
         const geometry = this.getGeometry();
         if (!geometry) return;
-        const contentPoint = minimapPointToContent(
-            this.pointerToMinimap(e),
-            geometry,
-            MINIMAP_WIDTH,
-            MINIMAP_HEIGHT,
-        );
+        const rect = this.minimap.getBoundingClientRect();
+        const screenDelta = {
+            x: (e.clientX - this.dragStartPointer.x) * geometry.viewportWidth / rect.width,
+            y: (e.clientY - this.dragStartPointer.y) * geometry.viewportHeight / rect.height,
+        };
+        const contentDelta = screenPointToContent(screenDelta, { x: 0, y: 0 }, geometry);
         this.viewCenter = {
-            x: contentPoint.x + this.dragOffset.x,
-            y: contentPoint.y + this.dragOffset.y,
+            x: this.dragStartCenter.x - contentDelta.x,
+            y: this.dragStartCenter.y - contentDelta.y,
         };
         this.applyViewCenter(geometry);
         this.updateMinimap();
     }
 
     private minimapOnPointerDown(e: PointerEvent) {
-        if (e.button !== 0) return;
+        if (e.button !== 0 || !this.minimap.classList.contains('has-frame')) return;
         const geometry = this.getGeometry();
         if (!geometry) return;
+        const rect = this.minimap.getBoundingClientRect();
+        const translation = viewCenterToTranslation(this.viewCenter, geometry);
+        const screenPoint = {
+            x: (e.clientX - rect.left) * geometry.viewportWidth / rect.width - geometry.viewportWidth / 2,
+            y: (e.clientY - rect.top) * geometry.viewportHeight / rect.height - geometry.viewportHeight / 2,
+        };
+        const contentPoint = screenPointToContent(screenPoint, translation, geometry);
+        if (Math.abs(contentPoint.x) > geometry.contentWidth / 2
+            || Math.abs(contentPoint.y) > geometry.contentHeight / 2) return;
 
         e.preventDefault();
         this.activePointerId = e.pointerId;
+        this.dragStartPointer = { x: e.clientX, y: e.clientY };
+        this.dragStartCenter = { ...this.viewCenter };
         this.minimap.setPointerCapture(e.pointerId);
-        const contentPoint = minimapPointToContent(
-            this.pointerToMinimap(e),
-            geometry,
-            MINIMAP_WIDTH,
-            MINIMAP_HEIGHT,
-        );
-
-        if (e.target === this.viewport) {
-            this.dragOffset = {
-                x: this.viewCenter.x - contentPoint.x,
-                y: this.viewCenter.y - contentPoint.y,
-            };
-        } else {
-            this.dragOffset = { x: 0, y: 0 };
-            this.moveViewportToPointer(e);
-        }
     }
 
     private minimapOnPointerMove(e: PointerEvent) {
         if (e.pointerId !== this.activePointerId) return;
         e.preventDefault();
-        this.moveViewportToPointer(e);
+        this.movePreviewWithPointer(e);
     }
 
     private minimapOnPointerUp(e: PointerEvent) {
@@ -336,6 +284,11 @@ class RotateController {
             this.minimap.releasePointerCapture(e.pointerId);
         }
         this.activePointerId = null;
+        const panelRect = this.panel.getBoundingClientRect();
+        if (e.clientX < panelRect.left || e.clientX > panelRect.right
+            || e.clientY < panelRect.top || e.clientY > panelRect.bottom) {
+            this.useTeimer(() => this.hidePanel());
+        }
     }
 
     private resetTranslation() {
@@ -385,6 +338,7 @@ class RotateController {
     }
 
     private panelOnMouseLeave() {
+        if (this.activePointerId !== null) return;
         this.useTeimer(() => this.hidePanel());
     }
 
