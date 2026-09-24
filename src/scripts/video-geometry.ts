@@ -4,24 +4,26 @@ export interface Point {
 }
 
 export interface VideoGeometryInput {
-    contentWidth: number;
-    contentHeight: number;
-    viewportWidth: number;
-    viewportHeight: number;
-    angle: number;
-    userScale: number;
-    videoWidth?: number;
-    videoHeight?: number;
+    readonly contentWidth: number;
+    readonly contentHeight: number;
+    readonly viewportWidth: number;
+    readonly viewportHeight: number;
+    readonly angle: number;
+    readonly userScale: number;
+    readonly videoWidth?: number;
+    readonly videoHeight?: number;
 }
 
-export interface VideoGeometry extends VideoGeometryInput {
-    radians: number;
-    cos: number;
-    sin: number;
-    frameWidth: number;
-    frameHeight: number;
-    fitScale: number;
-    scale: number;
+export interface VideoGeometry extends Omit<VideoGeometryInput, 'videoWidth' | 'videoHeight'> {
+    readonly videoWidth: number;
+    readonly videoHeight: number;
+    readonly radians: number;
+    readonly cos: number;
+    readonly sin: number;
+    readonly frameWidth: number;
+    readonly frameHeight: number;
+    readonly fitScale: number;
+    readonly scale: number;
 }
 
 const EPSILON = 1e-7;
@@ -55,6 +57,8 @@ export function calculateVideoGeometry(input: VideoGeometryInput): VideoGeometry
         contentHeight,
         viewportWidth,
         viewportHeight,
+        videoWidth,
+        videoHeight,
         radians,
         cos,
         sin,

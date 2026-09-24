@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as dir from './tools/dir.ts';
 
-import manifest from './config/manifest.json' assert { type: 'json' };
+import manifest from './config/manifest.json' with { type: 'json' };
 import { minify } from 'html-minifier-terser';
 
 const distDir = path.resolve(__dirname, 'dist');

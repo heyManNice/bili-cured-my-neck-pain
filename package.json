@@ -1,10 +1,11 @@
 {
     "scripts": {
-        "build": "bun build.ts",
+        "build": "bun run typecheck && bun build.ts",
         "build:tm": "bun tools/build-for-tm.ts",
         "release": "bun run build && bun run build:tm && bun run package:release",
         "package:release": "bun tools/release.ts",
         "test": "bun test",
+        "typecheck": "tsc --noEmit",
         "docs:dev": "vite",
         "docs:build": "vite build",
         "docs:preview": "vite preview"
@@ -12,12 +13,14 @@
     "devDependencies": {
         "@tailwindcss/vite": "^4.1.18",
         "@types/adm-zip": "^0.5.7",
+        "@types/bun": "^1.4.2",
         "@types/html-minifier-terser": "^7.0.2",
         "@types/node": "^24.10.1",
         "adm-zip": "^0.5.16",
         "esbuild": "^0.27.1",
         "html-minifier-terser": "^7.2.0",
         "tailwindcss": "^4.1.18",
+        "typescript": "^7.0.2",
         "vite": "^7.2.7"
     }
 }

@@ -13,7 +13,8 @@ async function main() {
     const settingBtn = await waitUntilElementReady('.bpx-player-ctrl-btn.bpx-player-ctrl-setting');
     const beginTime = performance.now();
 
-    insertHtmlAfterElement(settingBtn, rotateHtml);
+    // The build plugin loads .html as text; Bun's ambient type describes HTML imports differently.
+    insertHtmlAfterElement(settingBtn, rotateHtml as unknown as string);
     rotateScript.onLoad();
 
     const cost = (performance.now() - beginTime).toFixed(1);
