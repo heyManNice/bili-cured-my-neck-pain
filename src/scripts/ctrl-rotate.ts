@@ -103,6 +103,15 @@ class RotateController {
         this.minimap.addEventListener('pointerup', this.minimapOnPointerUp.bind(this));
         this.minimap.addEventListener('pointercancel', this.minimapOnPointerUp.bind(this));
 
+        document.addEventListener('loadedmetadata', event => {
+            if (!(event.target instanceof HTMLVideoElement)
+                || !event.target.matches('.bpx-player-video-wrap video')) return;
+            const geometry = this.getGeometry();
+            if (!geometry) return;
+            this.applyScaleAndRotation(geometry, false);
+            this.updateMinimap();
+        }, true);
+
         this.observePlayerSize();
     }
 
@@ -154,6 +163,7 @@ class RotateController {
     private getGeometry(): VideoGeometry | null {
         const content = this.getVideoContainer();
         const viewport = this.getPlayerViewport();
+        const video = content?.querySelector<HTMLVideoElement>('video');
         if (!content || !viewport || !content.clientWidth || !content.clientHeight
             || !viewport.clientWidth || !viewport.clientHeight) {
             return null;
@@ -166,6 +176,8 @@ class RotateController {
             viewportHeight: viewport.clientHeight,
             angle: this.getCurrentAngle(),
             userScale: this.getUserScale(),
+            videoWidth: video?.videoWidth || content.clientWidth,
+            videoHeight: video?.videoHeight || content.clientHeight,
         });
     }
 
@@ -189,12 +201,6 @@ class RotateController {
                 width / geometry.viewportWidth,
                 height / geometry.viewportHeight,
             );
-            const videoScale = Math.min(
-                geometry.contentWidth / video.videoWidth,
-                geometry.contentHeight / video.videoHeight,
-            );
-            const videoWidth = video.videoWidth * videoScale;
-            const videoHeight = video.videoHeight * videoScale;
             const translation = viewCenterToTranslation(this.viewCenter, geometry);
 
             context.resetTransform();
@@ -209,10 +215,10 @@ class RotateController {
             context.scale(geometry.scale, geometry.scale);
             context.drawImage(
                 video,
-                -videoWidth / 2,
-                -videoHeight / 2,
-                videoWidth,
-                videoHeight,
+                -geometry.frameWidth / 2,
+                -geometry.frameHeight / 2,
+                geometry.frameWidth,
+                geometry.frameHeight,
             );
             context.resetTransform();
             this.minimap.classList.add('has-frame');

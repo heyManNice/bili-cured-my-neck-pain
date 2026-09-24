@@ -10,13 +10,17 @@ export interface VideoGeometryInput {
     viewportHeight: number;
     angle: number;
     userScale: number;
+    videoWidth?: number;
+    videoHeight?: number;
 }
 
 export interface VideoGeometry extends VideoGeometryInput {
     radians: number;
     cos: number;
     sin: number;
-    coverScale: number;
+    frameWidth: number;
+    frameHeight: number;
+    fitScale: number;
     scale: number;
 }
 
@@ -32,13 +36,18 @@ export function calculateVideoGeometry(input: VideoGeometryInput): VideoGeometry
     const sin = Math.sin(radians);
     const absCos = Math.abs(cos);
     const absSin = Math.abs(sin);
+    const videoWidth = Math.max(EPSILON, input.videoWidth ?? contentWidth);
+    const videoHeight = Math.max(EPSILON, input.videoHeight ?? contentHeight);
+    const frameScale = Math.min(contentWidth / videoWidth, contentHeight / videoHeight);
+    const frameWidth = videoWidth * frameScale;
+    const frameHeight = videoHeight * frameScale;
 
-    // 将播放器四角逆旋转到视频坐标系，确保 100% 时视频完整覆盖播放器。
-    const coverScale = Math.max(
-        (viewportWidth * absCos + viewportHeight * absSin) / contentWidth,
-        (viewportWidth * absSin + viewportHeight * absCos) / contentHeight,
+    // At 100%, fit the rotated video frame inside the player viewport.
+    const fitScale = Math.min(
+        viewportWidth / (frameWidth * absCos + frameHeight * absSin),
+        viewportHeight / (frameWidth * absSin + frameHeight * absCos),
     );
-    const scale = coverScale * Math.max(0.01, input.userScale);
+    const scale = fitScale * Math.max(0.01, input.userScale);
 
     return {
         ...input,
@@ -49,7 +58,9 @@ export function calculateVideoGeometry(input: VideoGeometryInput): VideoGeometry
         radians,
         cos,
         sin,
-        coverScale,
+        frameWidth,
+        frameHeight,
+        fitScale,
         scale,
     };
 }

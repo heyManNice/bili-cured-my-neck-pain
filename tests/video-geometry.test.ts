@@ -14,14 +14,36 @@ const base = {
 };
 
 describe('video geometry', () => {
-    test('uses a 1x cover scale at 0 degrees', () => {
+    test('uses a 1x fit scale at 0 degrees', () => {
         const geometry = calculateVideoGeometry({ ...base, angle: 0 });
-        expect(geometry.coverScale).toBeCloseTo(1);
+        expect(geometry.fitScale).toBeCloseTo(1);
     });
 
-    test('uses the exact cover scale at 90 degrees', () => {
+    test('fits a landscape frame after a quarter turn', () => {
         const geometry = calculateVideoGeometry({ ...base, angle: 90 });
-        expect(geometry.coverScale).toBeCloseTo(16 / 9);
+        expect(geometry.fitScale).toBeCloseTo(9 / 16);
+    });
+
+    test('enlarges a portrait frame to fit after a quarter turn', () => {
+        const geometry = calculateVideoGeometry({
+            ...base,
+            angle: 90,
+            videoWidth: 900,
+            videoHeight: 1600,
+        });
+        expect(geometry.frameWidth).toBeCloseTo(506.25);
+        expect(geometry.frameHeight).toBeCloseTo(900);
+        expect(geometry.fitScale).toBeCloseTo(16 / 9);
+    });
+
+    test('keeps an arbitrary rotation inside the viewport', () => {
+        const geometry = calculateVideoGeometry({ ...base, angle: 45 });
+        const rotatedWidth = geometry.frameWidth * Math.abs(geometry.cos)
+            + geometry.frameHeight * Math.abs(geometry.sin);
+        const rotatedHeight = geometry.frameWidth * Math.abs(geometry.sin)
+            + geometry.frameHeight * Math.abs(geometry.cos);
+        expect(rotatedWidth * geometry.scale).toBeLessThanOrEqual(base.viewportWidth);
+        expect(rotatedHeight * geometry.scale).toBeLessThanOrEqual(base.viewportHeight);
     });
 
     test('maps a video-space center to a rotated screen translation', () => {
