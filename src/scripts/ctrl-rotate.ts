@@ -185,26 +185,34 @@ class RotateController {
         if (!context) return;
         try {
             const { width, height } = this.minimapCanvas;
-            const xScale = width / geometry.viewportWidth;
-            const yScale = height / geometry.viewportHeight;
+            const previewScale = Math.min(
+                width / geometry.viewportWidth,
+                height / geometry.viewportHeight,
+            );
+            const videoScale = Math.min(
+                geometry.contentWidth / video.videoWidth,
+                geometry.contentHeight / video.videoHeight,
+            );
+            const videoWidth = video.videoWidth * videoScale;
+            const videoHeight = video.videoHeight * videoScale;
             const translation = viewCenterToTranslation(this.viewCenter, geometry);
 
             context.resetTransform();
             context.fillStyle = '#111820';
             context.fillRect(0, 0, width, height);
             context.setTransform(
-                xScale, 0, 0, yScale,
-                width / 2 + translation.x * xScale,
-                height / 2 + translation.y * yScale,
+                previewScale, 0, 0, previewScale,
+                width / 2 + translation.x * previewScale,
+                height / 2 + translation.y * previewScale,
             );
             context.rotate(geometry.radians);
             context.scale(geometry.scale, geometry.scale);
             context.drawImage(
                 video,
-                -geometry.contentWidth / 2,
-                -geometry.contentHeight / 2,
-                geometry.contentWidth,
-                geometry.contentHeight,
+                -videoWidth / 2,
+                -videoHeight / 2,
+                videoWidth,
+                videoHeight,
             );
             context.resetTransform();
             this.minimap.classList.add('has-frame');
@@ -238,9 +246,13 @@ class RotateController {
         const geometry = this.getGeometry();
         if (!geometry) return;
         const rect = this.minimap.getBoundingClientRect();
+        const previewScale = Math.min(
+            rect.width / geometry.viewportWidth,
+            rect.height / geometry.viewportHeight,
+        );
         const screenDelta = {
-            x: (e.clientX - this.dragStartPointer.x) * geometry.viewportWidth / rect.width,
-            y: (e.clientY - this.dragStartPointer.y) * geometry.viewportHeight / rect.height,
+            x: (e.clientX - this.dragStartPointer.x) / previewScale,
+            y: (e.clientY - this.dragStartPointer.y) / previewScale,
         };
         const contentDelta = screenPointToContent(screenDelta, { x: 0, y: 0 }, geometry);
         this.viewCenter = {
@@ -256,10 +268,14 @@ class RotateController {
         const geometry = this.getGeometry();
         if (!geometry) return;
         const rect = this.minimap.getBoundingClientRect();
+        const previewScale = Math.min(
+            rect.width / geometry.viewportWidth,
+            rect.height / geometry.viewportHeight,
+        );
         const translation = viewCenterToTranslation(this.viewCenter, geometry);
         const screenPoint = {
-            x: (e.clientX - rect.left) * geometry.viewportWidth / rect.width - geometry.viewportWidth / 2,
-            y: (e.clientY - rect.top) * geometry.viewportHeight / rect.height - geometry.viewportHeight / 2,
+            x: (e.clientX - rect.left - rect.width / 2) / previewScale,
+            y: (e.clientY - rect.top - rect.height / 2) / previewScale,
         };
         const contentPoint = screenPointToContent(screenPoint, translation, geometry);
         if (Math.abs(contentPoint.x) > geometry.contentWidth / 2
