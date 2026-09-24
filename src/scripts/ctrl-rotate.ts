@@ -35,6 +35,7 @@ class RotateController {
     private dragStartCenter: Point = { x: 0, y: 0 };
     private resizeObserver: ResizeObserver | null = null;
     private thumbnailTimer: number | null = null;
+    private previewAnimationFrame: number | null = null;
 
     // 显示和隐藏面板共用的定时器
     private timer: number | null = null;
@@ -187,8 +188,9 @@ class RotateController {
 
     private drawMinimapFrame() {
         const video = document.querySelector<HTMLVideoElement>('.bpx-player-video-wrap video');
+        const content = this.getVideoContainer();
         const geometry = this.getGeometry();
-        if (!video || !geometry || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        if (!video || !content || !geometry || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
             this.minimap.classList.remove('has-frame');
             return;
         }
@@ -201,7 +203,16 @@ class RotateController {
                 width / geometry.viewportWidth,
                 height / geometry.viewportHeight,
             );
-            const translation = viewCenterToTranslation(this.viewCenter, geometry);
+            const renderedStyle = getComputedStyle(content);
+            const renderedAngle = parseFloat(renderedStyle.rotate);
+            const renderedScale = parseFloat(renderedStyle.scale);
+            const scale = Number.isFinite(renderedScale) ? renderedScale : geometry.scale;
+            const [renderedX, renderedY] = renderedStyle.translate.split(/\s+/).map(parseFloat);
+            const targetTranslation = viewCenterToTranslation(this.viewCenter, geometry);
+            const translation = {
+                x: Number.isFinite(renderedX) ? renderedX : targetTranslation.x,
+                y: Number.isFinite(renderedY) ? renderedY : targetTranslation.y,
+            };
 
             context.resetTransform();
             context.fillStyle = '#111820';
@@ -211,8 +222,8 @@ class RotateController {
                 width / 2 + translation.x * previewScale,
                 height / 2 + translation.y * previewScale,
             );
-            context.rotate(geometry.radians);
-            context.scale(geometry.scale, geometry.scale);
+            context.rotate(Number.isFinite(renderedAngle) ? renderedAngle * Math.PI / 180 : geometry.radians);
+            context.scale(scale, scale);
             context.drawImage(
                 video,
                 -geometry.frameWidth / 2,
@@ -239,6 +250,28 @@ class RotateController {
             clearInterval(this.thumbnailTimer);
             this.thumbnailTimer = null;
         }
+        if (this.previewAnimationFrame !== null) {
+            cancelAnimationFrame(this.previewAnimationFrame);
+            this.previewAnimationFrame = null;
+        }
+    }
+
+    private followVideoAnimation(animation: Animation) {
+        if (this.previewAnimationFrame !== null) {
+            cancelAnimationFrame(this.previewAnimationFrame);
+            this.previewAnimationFrame = null;
+        }
+        if (this.panel.style.display !== 'flex') return;
+
+        const update = () => {
+            this.previewAnimationFrame = null;
+            if (this.panel.style.display !== 'flex') return;
+            this.drawMinimapFrame();
+            if (animation.playState === 'running') {
+                this.previewAnimationFrame = requestAnimationFrame(update);
+            }
+        };
+        this.previewAnimationFrame = requestAnimationFrame(update);
     }
 
     private applyViewCenter(geometry: VideoGeometry) {
@@ -491,13 +524,14 @@ class RotateController {
             optimizedOldRotate = '-90deg';
         }
 
-        video.animate([
+        const animation = video.animate([
             { rotate: optimizedOldRotate, scale: oldScale, translate: oldTranslate },
             { rotate: newRotate, scale: newScale, translate: newTranslate }
         ], {
             duration: 300,
             easing: 'ease-in-out',
         });
+        this.followVideoAnimation(animation);
     }
 
     private rotateAndScaleVideo() {
