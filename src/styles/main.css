@@ -81,6 +81,67 @@
     cursor: pointer;
 }
 
+.bcmnp-preset-menu {
+    position: absolute;
+    z-index: 20;
+    min-width: 104px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    background: #252a31;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.bcmnp-preset-menu[hidden],
+.bcmnp-preset-form[hidden],
+.bcmnp-preset-actions[hidden] {
+    display: none;
+}
+
+.bcmnp-preset-actions,
+.bcmnp-preset-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bcmnp-preset-menu button {
+    border: 0;
+    border-radius: 2px;
+    padding: 4px 8px;
+    color: #fff;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.bcmnp-preset-menu button:hover,
+.bcmnp-preset-menu button:focus-visible {
+    background: var(--bpx-primary-color, #00AEEC);
+}
+
+.bcmnp-preset-value,
+.bcmnp-preset-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bcmnp-preset-value input {
+    box-sizing: border-box;
+    width: 64px;
+    padding: 3px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 2px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bcmnp-preset-form-actions button {
+    flex: 1;
+    text-align: center;
+}
+
 .bcmnp-slider-row {
     display: flex;
     align-items: center;

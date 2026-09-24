@@ -15,6 +15,8 @@ import {
     type VideoGeometry,
 } from './video-geometry.ts';
 
+type PresetType = 'scale' | 'rotate';
+
 class RotateController {
     private toggle: HTMLElement;
     private panel: HTMLElement;
@@ -27,6 +29,13 @@ class RotateController {
     private resetTranslateButton: HTMLButtonElement;
     private rotateSlider: HTMLInputElement;
     private rotateInput: HTMLInputElement;
+    private presetMenu: HTMLElement;
+    private presetActions: HTMLElement;
+    private presetForm: HTMLFormElement;
+    private presetInput: HTMLInputElement;
+    private presetUnit: HTMLElement;
+    private presetDefaults = new Map<HTMLButtonElement, number>();
+    private presetTarget: { type: PresetType; button: HTMLButtonElement; index: number } | null = null;
 
     // 当前播放器中心对应的视频自身坐标，旋转、缩放和位置移动共用这一份状态。
     private viewCenter: Point = { x: 0, y: 0 };
@@ -61,8 +70,14 @@ class RotateController {
         const minimap = panel.querySelector<HTMLElement>('.bcmnp-minimap');
         const minimapCanvas = panel.querySelector<HTMLCanvasElement>('.bcmnp-minimap-canvas');
         const resetTranslateButton = panel.querySelector<HTMLButtonElement>('.bcmnp-reset-translate');
-        if (!minimap || !minimapCanvas || !resetTranslateButton) {
-            throw new Error('视频预览未找到');
+        const presetMenu = panel.querySelector<HTMLElement>('.bcmnp-preset-menu');
+        const presetActions = panel.querySelector<HTMLElement>('.bcmnp-preset-actions');
+        const presetForm = panel.querySelector<HTMLFormElement>('.bcmnp-preset-form');
+        const presetInput = presetForm?.querySelector<HTMLInputElement>('input');
+        const presetUnit = presetForm?.querySelector<HTMLElement>('.bcmnp-preset-unit');
+        if (!minimap || !minimapCanvas || !resetTranslateButton || !presetMenu
+            || !presetActions || !presetForm || !presetInput || !presetUnit) {
+            throw new Error('旋转面板元素未找到');
         }
 
         this.toggle = toggle;
@@ -76,6 +91,13 @@ class RotateController {
         this.resetTranslateButton = resetTranslateButton;
         this.rotateSlider = rotateSlider;
         this.rotateInput = rotateInput;
+        this.presetMenu = presetMenu;
+        this.presetActions = presetActions;
+        this.presetForm = presetForm;
+        this.presetInput = presetInput;
+        this.presetUnit = presetUnit;
+
+        this.restorePresets();
 
         this.toggle.addEventListener('mouseenter', this.toggleOnMouseEnter.bind(this));
         this.toggle.addEventListener('mouseleave', this.toggleOnMouseLeave.bind(this));
@@ -83,6 +105,18 @@ class RotateController {
         this.panel.addEventListener('mouseleave', this.panelOnMouseLeave.bind(this));
         this.rotateItems.addEventListener('click', this.rotateItemOnClick.bind(this));
         this.scaleItems.addEventListener('click', this.scaleItemOnClick.bind(this));
+        this.rotateItems.addEventListener('contextmenu', event => this.openPresetMenu(event, 'rotate'));
+        this.scaleItems.addEventListener('contextmenu', event => this.openPresetMenu(event, 'scale'));
+        presetMenu.querySelector('.bcmnp-preset-edit')?.addEventListener('click', () => this.editPreset());
+        presetMenu.querySelector('.bcmnp-preset-reset')?.addEventListener('click', () => this.resetPreset());
+        presetMenu.querySelector('.bcmnp-preset-cancel')?.addEventListener('click', () => this.closePresetMenu());
+        presetForm.addEventListener('submit', event => this.savePreset(event));
+        document.addEventListener('pointerdown', event => {
+            if (!this.presetMenu.contains(event.target as Node)) this.closePresetMenu();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') this.closePresetMenu();
+        });
         this.scaleSlider.addEventListener('input', this.sliderOnInput.bind(this));
         this.scaleInput.addEventListener('change', this.inputOnChange.bind(this));
         this.rotateSlider.addEventListener('input', this.rotateSliderOnInput.bind(this));
@@ -138,6 +172,7 @@ class RotateController {
             return;
         }
         this.panel.style.display = 'none';
+        this.closePresetMenu();
         this.stopThumbnailRefresh();
     }
 
@@ -159,6 +194,121 @@ class RotateController {
     private getUserScale(): number {
         const value = parseInt(this.scaleSlider.value, 10);
         return (isNaN(value) ? 100 : value) / 100;
+    }
+
+    private presetStorageKey(type: PresetType, index: number) {
+        return `bcmnp:quick-${type}:${index}`;
+    }
+
+    private isValidPreset(type: PresetType, value: number) {
+        return Number.isInteger(value)
+            && value >= (type === 'scale' ? 10 : 0)
+            && value <= (type === 'scale' ? 1000 : 360);
+    }
+
+    private setPresetValue(type: PresetType, button: HTMLButtonElement, value: number) {
+        if (type === 'scale') {
+            button.dataset.scale = String(value / 100);
+            button.textContent = `${value}%`;
+            this.syncScaleUI(parseInt(this.scaleSlider.value, 10));
+        } else {
+            button.dataset.angle = String(value);
+            button.textContent = `${value}°`;
+            this.syncRotateUI(this.getCurrentAngle());
+        }
+    }
+
+    private restorePresets() {
+        for (const type of ['scale', 'rotate'] as const) {
+            const group = type === 'scale' ? this.scaleItems : this.rotateItems;
+            group.querySelectorAll<HTMLButtonElement>('.bcmnp-btn-item').forEach((button, index) => {
+                const defaultValue = type === 'scale'
+                    ? Math.round(Number(button.dataset.scale) * 100)
+                    : Number(button.dataset.angle);
+                this.presetDefaults.set(button, defaultValue);
+                try {
+                    const saved = localStorage.getItem(this.presetStorageKey(type, index));
+                    if (saved === null) return;
+                    const value = Number(saved);
+                    if (this.isValidPreset(type, value)) this.setPresetValue(type, button, value);
+                } catch {
+                    // Presets remain usable when page storage is unavailable.
+                }
+            });
+        }
+    }
+
+    private openPresetMenu(event: MouseEvent, type: PresetType) {
+        const button = event.target instanceof Element
+            ? event.target.closest<HTMLButtonElement>('.bcmnp-btn-item')
+            : null;
+        const group = type === 'scale' ? this.scaleItems : this.rotateItems;
+        if (!button || !group.contains(button)) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const index = Array.from(group.querySelectorAll('.bcmnp-btn-item')).indexOf(button);
+        this.presetTarget = { type, button, index };
+        this.presetActions.hidden = false;
+        this.presetForm.hidden = true;
+        this.presetMenu.hidden = false;
+        const rect = this.panel.getBoundingClientRect();
+        this.presetMenu.style.left = `${Math.max(0, Math.min(event.clientX - rect.left, rect.width - this.presetMenu.offsetWidth))}px`;
+        this.presetMenu.style.top = `${Math.max(0, Math.min(event.clientY - rect.top, rect.height - this.presetMenu.offsetHeight))}px`;
+    }
+
+    private closePresetMenu() {
+        this.presetMenu.hidden = true;
+        this.presetTarget = null;
+    }
+
+    private editPreset() {
+        const target = this.presetTarget;
+        if (!target) return;
+        const value = target.type === 'scale'
+            ? Math.round(Number(target.button.dataset.scale) * 100)
+            : Number(target.button.dataset.angle);
+        this.presetInput.min = target.type === 'scale' ? '10' : '0';
+        this.presetInput.max = target.type === 'scale' ? '1000' : '360';
+        this.presetInput.value = String(value);
+        this.presetUnit.textContent = target.type === 'scale' ? '%' : '°';
+        this.presetActions.hidden = true;
+        this.presetForm.hidden = false;
+        this.presetMenu.style.top = `${Math.max(0, Math.min(this.presetMenu.offsetTop, this.panel.clientHeight - this.presetMenu.offsetHeight))}px`;
+        this.presetInput.focus();
+        this.presetInput.select();
+    }
+
+    private savePreset(event: SubmitEvent) {
+        event.preventDefault();
+        const target = this.presetTarget;
+        if (!target) return;
+        const value = Number(this.presetInput.value);
+        if (!this.presetInput.checkValidity() || !this.isValidPreset(target.type, value)) {
+            this.presetInput.reportValidity();
+            return;
+        }
+        this.setPresetValue(target.type, target.button, value);
+        try {
+            localStorage.setItem(this.presetStorageKey(target.type, target.index), String(value));
+        } catch {
+            // Keep the updated slot for this session if storage is unavailable.
+        }
+        this.closePresetMenu();
+    }
+
+    private resetPreset() {
+        const target = this.presetTarget;
+        if (!target) return;
+        const defaultValue = this.presetDefaults.get(target.button);
+        if (defaultValue === undefined) return;
+        this.setPresetValue(target.type, target.button, defaultValue);
+        try {
+            localStorage.removeItem(this.presetStorageKey(target.type, target.index));
+        } catch {
+            // The default still applies for this session.
+        }
+        this.closePresetMenu();
     }
 
     private getGeometry(): VideoGeometry | null {
