@@ -146,13 +146,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    width: 100%;
     margin-bottom: 2px;
 }
 
 .bcmnp-slider-row input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
-    width: 140px;
+    flex: 1 1 0;
+    min-width: 0;
     height: 4px;
     border-radius: 2px;
     background: rgba(255, 255, 255, 0.25);
@@ -175,8 +177,9 @@
     transform: scale(1.2);
 }
 
-.bcmnp-slider-row input[type="number"] {
-    width: 52px;
+.bcmnp-slider-row .bcmnp-value-input {
+    flex: none;
+    width: 35px;
     height: 22px;
     padding: 0 4px;
     border: 1px solid rgba(255, 255, 255, 0.25);
@@ -186,16 +189,9 @@
     font-size: 12px;
     text-align: center;
     outline: none;
-    -moz-appearance: textfield;
 }
 
-.bcmnp-slider-row input[type="number"]::-webkit-inner-spin-button,
-.bcmnp-slider-row input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-.bcmnp-slider-row input[type="number"]:focus {
+.bcmnp-slider-row .bcmnp-value-input:focus {
     border-color: var(--bpx-primary-color, #00AEEC);
 }
 

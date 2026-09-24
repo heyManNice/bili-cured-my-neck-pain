@@ -6,6 +6,14 @@ import { QuickPresets } from './quick-presets.ts';
 import { VideoPreview } from './video-preview.ts';
 import { screenPointToContent, viewCenterToTranslation, type Point } from './video-geometry.ts';
 
+function parseValueWithUnit(value: string, unit: '%' | '°'): number | null {
+    const pattern = unit === '%'
+        ? /^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*[%％]?\s*$/
+        : /^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*°?\s*$/;
+    const match = pattern.exec(value);
+    return match ? Number(match[1]) : null;
+}
+
 class RotateController {
     private readonly toggle: HTMLElement;
     private readonly panel: HTMLElement;
@@ -65,11 +73,16 @@ class RotateController {
         panel.addEventListener('mouseleave', this.panelOnMouseLeave.bind(this));
         scaleSlider.addEventListener('input', () => this.setScale(parseInt(scaleSlider.value, 10)));
         scaleInput.addEventListener('change', () => {
-            const value = parseInt(scaleInput.value, 10);
-            this.setScale(Number.isNaN(value) ? 100 : value);
+            const value = parseValueWithUnit(scaleInput.value, '%');
+            if (value === null) scaleInput.value = `${this.state.scalePercent}%`;
+            else this.setScale(Math.trunc(value));
         });
         rotateSlider.addEventListener('input', () => this.setAngle(parseFloat(rotateSlider.value)));
-        rotateInput.addEventListener('change', () => this.setAngle(parseFloat(rotateInput.value) || 0));
+        rotateInput.addEventListener('change', () => {
+            const value = parseValueWithUnit(rotateInput.value, '°');
+            if (value === null) rotateInput.value = `${this.state.angle}°`;
+            else this.setAngle(value);
+        });
         scaleSlider.closest<HTMLElement>('.bcmnp-slider-row')?.addEventListener('wheel', event => {
             this.changeByWheel(event, 'scale');
         }, { passive: false });
@@ -93,10 +106,11 @@ class RotateController {
     }
 
     private setScale(value: number) {
-        const scalePercent = Math.max(10, Math.min(1000, value));
+        const requestedPercent = Math.max(10, Math.min(1000, value));
+        this.scaleSlider.value = String(requestedPercent);
+        const scalePercent = parseInt(this.scaleSlider.value, 10);
         this.state = { ...this.state, scalePercent };
-        this.scaleSlider.value = String(scalePercent);
-        this.scaleInput.value = String(scalePercent);
+        this.scaleInput.value = `${scalePercent}%`;
         this.presets.syncChecked('scale', scalePercent);
         this.applyState(true);
     }
@@ -106,7 +120,7 @@ class RotateController {
         this.rotateSlider.value = String(requestedAngle);
         const angle = parseFloat(this.rotateSlider.value);
         this.state = { ...this.state, angle };
-        this.rotateInput.value = String(angle);
+        this.rotateInput.value = `${angle}°`;
         this.presets.syncChecked('rotate', angle);
         this.applyState(true);
     }
