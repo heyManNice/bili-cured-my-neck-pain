@@ -22,7 +22,7 @@
                 <span class="bcmnp-label">位置移动</span>
                 <button type="button" class="bcmnp-reset-translate">重置位置</button>
             </div>
-            <div class="bcmnp-minimap" aria-label="拖动视频预览以移动画面">
+            <div class="bcmnp-minimap" aria-label="拖动视频预览以移动画面，滚轮缩放，Shift 加滚轮旋转，右键打开重置菜单">
                 <div class="bcmnp-minimap-placeholder">
                     <span>视频预览</span>
                 </div>
@@ -53,7 +53,11 @@
                 <button data-angle="270" class="bcmnp-btn-item">270°</button>
             </div>
         </div>
-        <div class="bcmnp-preset-menu" hidden>
+        <div class="bcmnp-minimap-menu bcmnp-context-menu" hidden>
+            <button type="button" class="bcmnp-minimap-reset-position">重置位置</button>
+            <button type="button" class="bcmnp-minimap-reset-all">重置全部</button>
+        </div>
+        <div class="bcmnp-preset-menu bcmnp-context-menu" hidden>
             <div class="bcmnp-preset-actions">
                 <button type="button" class="bcmnp-preset-edit">修改</button>
                 <button type="button" class="bcmnp-preset-reset">重置</button>

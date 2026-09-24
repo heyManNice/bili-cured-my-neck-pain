@@ -81,7 +81,7 @@
     cursor: pointer;
 }
 
-.bcmnp-preset-menu {
+.bcmnp-context-menu {
     position: absolute;
     z-index: 20;
     min-width: 104px;
@@ -92,12 +92,13 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
-.bcmnp-preset-menu[hidden],
+.bcmnp-context-menu[hidden],
 .bcmnp-preset-form[hidden],
 .bcmnp-preset-actions[hidden] {
     display: none;
 }
 
+.bcmnp-minimap-menu,
 .bcmnp-preset-actions,
 .bcmnp-preset-form {
     display: flex;
@@ -105,7 +106,7 @@
     gap: 4px;
 }
 
-.bcmnp-preset-menu button {
+.bcmnp-context-menu button {
     border: 0;
     border-radius: 2px;
     padding: 4px 8px;
@@ -115,8 +116,8 @@
     cursor: pointer;
 }
 
-.bcmnp-preset-menu button:hover,
-.bcmnp-preset-menu button:focus-visible {
+.bcmnp-context-menu button:hover,
+.bcmnp-context-menu button:focus-visible {
     background: var(--bpx-primary-color, #00AEEC);
 }
 

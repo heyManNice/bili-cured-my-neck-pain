@@ -22,6 +22,7 @@ class RotateController {
     private readonly rotateSlider: HTMLInputElement;
     private readonly rotateInput: HTMLInputElement;
     private readonly minimap: HTMLElement;
+    private readonly minimapMenu: HTMLElement;
     private readonly player = new PlayerDom();
     private readonly preview: VideoPreview;
     private readonly presets: QuickPresets;
@@ -45,9 +46,13 @@ class RotateController {
         const rotateInput = document.querySelector<HTMLInputElement>('.bcmnp-rotate-input');
         const minimap = panel?.querySelector<HTMLElement>('.bcmnp-minimap');
         const minimapCanvas = panel?.querySelector<HTMLCanvasElement>('.bcmnp-minimap-canvas');
+        const minimapMenu = panel?.querySelector<HTMLElement>('.bcmnp-minimap-menu');
+        const minimapResetPosition = minimapMenu?.querySelector<HTMLButtonElement>('.bcmnp-minimap-reset-position');
+        const minimapResetAll = minimapMenu?.querySelector<HTMLButtonElement>('.bcmnp-minimap-reset-all');
         const resetTranslateButton = panel?.querySelector<HTMLButtonElement>('.bcmnp-reset-translate');
         if (!toggle || !panel || !rotateItems || !scaleItems || !scaleSlider || !scaleInput
-            || !rotateSlider || !rotateInput || !minimap || !minimapCanvas || !resetTranslateButton) {
+            || !rotateSlider || !rotateInput || !minimap || !minimapCanvas || !minimapMenu
+            || !minimapResetPosition || !minimapResetAll || !resetTranslateButton) {
             throw new Error('旋转按钮或面板未找到');
         }
 
@@ -58,6 +63,7 @@ class RotateController {
         this.rotateSlider = rotateSlider;
         this.rotateInput = rotateInput;
         this.minimap = minimap;
+        this.minimapMenu = minimapMenu;
         this.preview = new VideoPreview(minimap, minimapCanvas, this.player, () => this.state);
         this.presets = new QuickPresets(
             panel,
@@ -94,6 +100,24 @@ class RotateController {
         minimap.addEventListener('pointermove', this.minimapOnPointerMove.bind(this));
         minimap.addEventListener('pointerup', this.minimapOnPointerUp.bind(this));
         minimap.addEventListener('pointercancel', this.minimapOnPointerUp.bind(this));
+        minimap.addEventListener('wheel', event => {
+            this.changeByWheel(event, event.shiftKey ? 'rotate' : 'scale', event.shiftKey);
+        }, { passive: false });
+        minimap.addEventListener('contextmenu', event => this.openMinimapMenu(event));
+        minimapResetPosition.addEventListener('click', () => {
+            this.closeMinimapMenu();
+            this.resetTranslation();
+        });
+        minimapResetAll.addEventListener('click', () => {
+            this.closeMinimapMenu();
+            this.resetAll();
+        });
+        document.addEventListener('pointerdown', event => {
+            if (!minimapMenu.contains(event.target as Node)) this.closeMinimapMenu();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') this.closeMinimapMenu();
+        });
 
         document.addEventListener('loadedmetadata', event => {
             if (!(event.target instanceof HTMLVideoElement)
@@ -125,11 +149,12 @@ class RotateController {
         this.applyState(true);
     }
 
-    private changeByWheel(event: WheelEvent, type: 'scale' | 'rotate') {
-        if (event.deltaY === 0) return;
+    private changeByWheel(event: WheelEvent, type: 'scale' | 'rotate', allowHorizontal = false) {
+        const delta = event.deltaY || (allowHorizontal ? event.deltaX : 0);
+        if (delta === 0) return;
         event.preventDefault();
         event.stopPropagation();
-        const direction = event.deltaY < 0 ? 1 : -1;
+        const direction = delta < 0 ? 1 : -1;
         if (type === 'scale') this.setScale(this.state.scalePercent + direction);
         else this.setAngle(this.state.angle + direction);
     }
@@ -151,6 +176,31 @@ class RotateController {
         this.state = { ...this.state, viewCenter: { x: 0, y: 0 } };
         this.player.applyTranslation(this.state, geometry);
         this.preview.requestDraw();
+    }
+
+    private resetAll() {
+        this.state = initialControlState;
+        this.scaleSlider.value = String(this.state.scalePercent);
+        this.scaleInput.value = `${this.state.scalePercent}%`;
+        this.rotateSlider.value = String(this.state.angle);
+        this.rotateInput.value = `${this.state.angle}°`;
+        this.presets.syncChecked('scale', this.state.scalePercent);
+        this.presets.syncChecked('rotate', this.state.angle);
+        this.applyState(true);
+    }
+
+    private openMinimapMenu(event: MouseEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.presets.close();
+        this.minimapMenu.hidden = false;
+        const rect = this.panel.getBoundingClientRect();
+        this.minimapMenu.style.left = `${Math.max(0, Math.min(event.clientX - rect.left, rect.width - this.minimapMenu.offsetWidth))}px`;
+        this.minimapMenu.style.top = `${Math.max(0, Math.min(event.clientY - rect.top, rect.height - this.minimapMenu.offsetHeight))}px`;
+    }
+
+    private closeMinimapMenu() {
+        this.minimapMenu.hidden = true;
     }
 
     private movePreviewWithPointer(event: PointerEvent) {
@@ -238,6 +288,7 @@ class RotateController {
         if (this.panel.style.display === 'none') return;
         this.panel.style.display = 'none';
         this.presets.close();
+        this.closeMinimapMenu();
         this.preview.stop();
     }
 
